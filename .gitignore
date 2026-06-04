@@ -22,3 +22,21 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# Keys and Certificates
+*.pem
+*.key
+*.cert
+*.crt
+
+# Tauri / Rust
+src-tauri/target/
+src-tauri/gen/schemas/

@@ -12,12 +12,12 @@
   "app": {
     "windows": [
       {
-        "title": "Oxide SEO",
+        "title": "Oxide SEO by shan",
         "width": 1280,
         "height": 800,
         "minWidth": 960,
         "minHeight": 600,
-        "decorations": true,
+        "decorations": false,
         "center": true
       }
     ],
