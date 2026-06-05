@@ -6,7 +6,7 @@ import { Badge } from '../components/Badge';
 import { useToast } from '../components/Toast';
 import { GscConnectModal } from '../components/GscConnectModal';
 import { fetchAndSyncGscData, fetchGscSites } from '../utils/gscApi';
-import { Delete01Icon, AnalyticsUpIcon, CursorMagicSelection01Icon, EyeIcon } from 'hugeicons-react';
+import { Delete01Icon, AnalyticsUpIcon, CursorMagicSelection01Icon, EyeIcon, Search01Icon, File01Icon } from 'hugeicons-react';
 
 interface GscMetric {
   id: number;
@@ -351,13 +351,30 @@ export const GscDashboard: React.FC = () => {
                       </Badge>
                     </td>
                     <td className="py-4 px-6 text-right">
-                      <button 
-                        onClick={() => deleteMetric(m.id)}
-                        className="text-zinc-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-1.5 rounded-md hover:bg-[var(--bg-base)]"
-                        title="Delete"
-                      >
-                        <Delete01Icon size={16} />
-                      </button>
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                        <button 
+                          onClick={() => window.dispatchEvent(new CustomEvent('app-navigate', { detail: { tab: 'vault', payload: { keyword: m.keyword } } }))}
+                          className="text-zinc-400 hover:text-[var(--accent-primary)] p-1.5 rounded-md hover:bg-[var(--accent-primary)]/10"
+                          title="Research Keyword"
+                        >
+                          <Search01Icon size={16} />
+                        </button>
+                        <button 
+                          onClick={() => window.dispatchEvent(new CustomEvent('app-navigate', { detail: { tab: 'competitor', payload: { page: m.page, keyword: m.keyword } } }))}
+                          className="text-zinc-400 hover:text-blue-400 p-1.5 rounded-md hover:bg-blue-500/10"
+                          title="Analyze SEO"
+                        >
+                          <File01Icon size={16} />
+                        </button>
+                        <div className="w-px h-4 bg-[var(--border-subtle)] mx-1"></div>
+                        <button 
+                          onClick={() => deleteMetric(m.id)}
+                          className="text-zinc-400 hover:text-red-500 p-1.5 rounded-md hover:bg-red-500/10"
+                          title="Delete"
+                        >
+                          <Delete01Icon size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

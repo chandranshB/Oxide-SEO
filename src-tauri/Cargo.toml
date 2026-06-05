@@ -28,4 +28,6 @@ scraper = "0.20.0"
 reqwest = { version = "0.12.0", features = ["json", "rustls-tls"] }
 urlencoding = "2.1.3"
 tauri-plugin-sql = { version = "2.4.0", features = ["sqlite"] }
+url = "2.5.8"
+roxmltree = "0.21.1"
 

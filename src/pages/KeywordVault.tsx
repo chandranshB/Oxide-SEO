@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -11,6 +11,20 @@ export const KeywordVault: React.FC = () => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isScraping, setIsScraping] = useState(false);
   const { success, error: toastError } = useToast();
+
+  useEffect(() => {
+    const handleNavigate = (e: CustomEvent) => {
+      if (e.detail?.tab === 'vault' && e.detail?.payload?.keyword) {
+        setSeedKeyword(e.detail.payload.keyword);
+        // Small delay to ensure state updates before triggering
+        setTimeout(() => {
+          document.getElementById('vault-scrape-btn')?.click();
+        }, 50);
+      }
+    };
+    window.addEventListener('app-navigate' as any, handleNavigate);
+    return () => window.removeEventListener('app-navigate' as any, handleNavigate);
+  }, []);
 
   const handleScrape = async () => {
     if (!seedKeyword.trim()) return;
@@ -38,7 +52,7 @@ export const KeywordVault: React.FC = () => {
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-xl font-semibold">Free Autocomplete Scraper</h2>
           <span className="text-[10px] uppercase tracking-widest font-bold text-[var(--accent-primary)] px-2 py-1 rounded-full bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20">
-            Oxide SEO by shan
+            <span style={{ fontFamily: '"Press Start 2P", system-ui', fontSize: '8px', textTransform: 'none', marginRight: '4px' }}><span className="text-[var(--accent-primary)]">Ox</span>ide SEO</span> by shan
           </span>
         </div>
         <p className="text-zinc-400 text-sm mb-6">
@@ -55,7 +69,7 @@ export const KeywordVault: React.FC = () => {
               icon={<Search01Icon size={18} />}
             />
           </div>
-          <Button onClick={handleScrape} disabled={isScraping || !seedKeyword.trim()} className="h-[42px] px-6">
+          <Button id="vault-scrape-btn" onClick={handleScrape} disabled={isScraping || !seedKeyword.trim()} className="h-[42px] px-6">
             {isScraping ? 'Scraping...' : 'Scrape Suggestions'}
           </Button>
         </div>

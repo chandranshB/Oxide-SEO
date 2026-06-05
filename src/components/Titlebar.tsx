@@ -7,13 +7,22 @@ export const Titlebar: React.FC = () => {
   return (
     <div 
       data-tauri-drag-region 
-      className="h-8 shrink-0 select-none flex justify-between items-center bg-[var(--bg-base)] border-b border-[var(--border-strong)] z-50"
+      className="h-8 shrink-0 select-none flex justify-between items-center bg-[var(--bg-base)] border-b border-[var(--border-strong)] z-50 relative"
     >
       <div 
         data-tauri-drag-region 
         className="flex items-center pl-4 text-[11px] font-semibold tracking-widest text-zinc-500 uppercase h-full w-full"
       >
         Oxide SEO by shan
+      </div>
+
+      <div 
+        data-tauri-drag-region 
+        className="absolute inset-0 flex items-center justify-center pointer-events-none"
+      >
+        <span style={{ fontFamily: '"Press Start 2P", system-ui', fontSize: '9px', textTransform: 'none' }} className="pointer-events-auto text-zinc-200">
+          <span className="text-[var(--accent-primary)]">Ox</span>ide SEO
+        </span>
       </div>
       <div className="flex h-full shrink-0">
         <div 
