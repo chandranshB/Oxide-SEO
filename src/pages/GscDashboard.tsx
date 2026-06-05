@@ -182,10 +182,12 @@ export const GscDashboard: React.FC = () => {
       <header className="flex justify-between items-start mb-8 pb-6 border-b border-[var(--border-strong)]">
         <div>
           <h1 className="text-2xl font-semibold mb-2">Search Console Dashboard</h1>
-          <p className="text-zinc-400">Striking Distance Opportunities (Positions 11-20)</p>
+          <p className="text-zinc-400">
+            {isConnected ? 'Striking Distance Opportunities (Positions 11-20)' : 'Google Search Console Integration'}
+          </p>
         </div>
-        <div className="flex gap-3 items-center">
-          {isConnected ? (
+        {isConnected && (
+          <div className="flex gap-3 items-center">
             <div className="flex gap-3 items-center">
               {availableSites.length > 0 ? (
                 <CustomSiteSelect 
@@ -202,13 +204,9 @@ export const GscDashboard: React.FC = () => {
                 {isSyncing ? 'Syncing...' : 'Sync from GSC'}
               </Button>
             </div>
-          ) : (
-            <Button onClick={() => setIsModalOpen(true)} variant="secondary" size="sm">
-              Connect GSC
-            </Button>
-          )}
-          <Button onClick={clearAllData} variant="danger" size="sm">Clear All</Button>
-        </div>
+            <Button onClick={clearAllData} variant="danger" size="sm">Clear All</Button>
+          </div>
+        )}
       </header>
       
       <GscConnectModal 
@@ -216,6 +214,7 @@ export const GscDashboard: React.FC = () => {
         onClose={() => setIsModalOpen(false)} 
         onConnected={async () => {
           setIsConnected(true);
+          window.dispatchEvent(new CustomEvent('gsc-connected'));
           try {
             const sites = await fetchGscSites();
             setAvailableSites(sites);
@@ -252,8 +251,11 @@ export const GscDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Metric Cards */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      {/* Main Content Area */}
+      {isConnected ? (
+        <>
+          {/* Metric Cards */}
+          <div className="grid grid-cols-4 gap-4 mb-8">
         <Card className="flex flex-col gap-3 !p-5 bg-gradient-to-br from-[var(--bg-surface)] to-[var(--bg-base)] border-[var(--border-strong)]">
           <div className="w-10 h-10 rounded-full bg-[var(--accent-primary)]/10 flex items-center justify-center text-[var(--accent-primary)] mb-2">
             <AnalyticsUpIcon size={20} />
@@ -383,6 +385,29 @@ export const GscDashboard: React.FC = () => {
           </div>
         )}
       </Card>
+        </>
+      ) : (
+        <div className="mt-8 p-16 bg-[var(--bg-surface)]/50 border border-[var(--border-strong)] rounded-3xl flex flex-col items-center justify-center text-center shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-pink-500/10 rounded-full blur-[80px] pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/10 rounded-full blur-[80px] pointer-events-none" />
+          
+          <div className="w-20 h-20 bg-[var(--bg-base)] border border-[var(--border-strong)] rounded-full flex items-center justify-center mb-6 shadow-xl relative z-10">
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-10 h-10 text-white"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/></svg>
+          </div>
+          
+          <h2 className="text-3xl font-bold mb-4 relative z-10">Connect Search Console</h2>
+          <p className="text-lg text-zinc-400 max-w-lg mb-10 leading-relaxed relative z-10">
+            Unlock your website's hidden potential. Connect your Google account to instantly sync your keyword data and discover your "striking distance" opportunities.
+          </p>
+          
+          <Button 
+            onClick={() => setIsModalOpen(true)} 
+            className="px-8 py-4 bg-white text-black hover:bg-zinc-200 shadow-xl shadow-white/10 text-lg font-semibold rounded-xl flex items-center gap-3 relative z-10 transition-transform hover:scale-105 active:scale-95"
+          >
+            Login with Google
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

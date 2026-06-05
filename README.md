@@ -63,6 +63,15 @@ Before you begin, ensure you have the following installed:
 *   [Rust Toolkit](https://www.rust-lang.org/tools/install)
 *   [Tauri OS Dependencies](https://tauri.app/v1/guides/getting-started/prerequisites)
 
+### Installation Guide
+
+#### Windows (SmartScreen Warning)
+Because Oxide SEO is an indie application, Microsoft Windows SmartScreen may initially flag the `.exe` or `.msi` installers with a "Windows protected your PC / Unknown Publisher" warning. This is a standard security feature for new applications.
+
+To install the application:
+1. Click **"More info"**
+2. Click **"Run anyway"**
+
 ### Local Development Setup
 
 1. **Clone the repository**
