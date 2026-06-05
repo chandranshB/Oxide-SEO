@@ -15,9 +15,7 @@ export function Landing() {
         <Titlebar /> 
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-(--accent-primary) to-[#2db379] flex items-center justify-center shadow-lg shadow-[#3ecf8e]/20">
-              <WebDesign01Icon size={18} className="text-white" />
-            </div>
+            <img src="/app-icon.png" alt="Oxide SEO Logo" className="w-8 h-8 object-contain drop-shadow-md" />
             <span className="font-bold text-lg tracking-tight" style={{ fontFamily: '"Press Start 2P", system-ui' }}>
               <span className="text-(--accent-primary)">Ox</span>ide SEO
             </span>
@@ -135,9 +133,7 @@ export function Landing() {
         <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex flex-col items-center md:items-start gap-2">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded bg-(--accent-primary) flex items-center justify-center">
-                <WebDesign01Icon size={14} className="text-(--bg-base)" />
-              </div>
+              <img src="/app-icon.png" alt="Oxide SEO Logo" className="w-6 h-6 object-contain" />
               <span className="font-bold text-sm tracking-tight" style={{ fontFamily: '"Press Start 2P", system-ui' }}>
                 <span className="text-(--accent-primary)">Ox</span>ide SEO
               </span>

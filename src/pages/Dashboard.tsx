@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Database from '@tauri-apps/plugin-sql';
 import { KeywordVault } from './KeywordVault';
 import { CompetitorAnalysis } from './CompetitorAnalysis';
 import { GscDashboard } from './GscDashboard';
@@ -105,14 +106,60 @@ export function Dashboard() {
         {/* Main Content Area */}
         <main className="flex-1 overflow-y-auto relative">
           {!activeProject ? (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8 animate-in fade-in zoom-in duration-500">
-              <div className="w-24 h-24 bg-(--bg-surface) rounded-2xl flex items-center justify-center border border-(--border-strong) mb-6 shadow-xl">
-                <WebDesign01Icon size={48} className="text-(--accent-primary)" />
+            <div className="flex flex-col items-center justify-center h-full text-center p-8 animate-in fade-in zoom-in duration-500 relative overflow-hidden">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[var(--accent-primary)]/5 rounded-full blur-[100px] pointer-events-none" />
+              
+              <div className="w-full max-w-xl relative z-10 space-y-10">
+                <div className="space-y-4">
+                  <h1 className="text-4xl font-bold tracking-tight" style={{ fontFamily: '"Press Start 2P", system-ui' }}>
+                    <span className="text-[var(--accent-primary)]">Ox</span>ide
+                  </h1>
+                  <p className="text-zinc-400 font-medium text-lg">Create a project to begin analyzing</p>
+                </div>
+
+                <form 
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    const form = e.target as HTMLFormElement;
+                    const input = form.elements.namedItem('domain') as HTMLInputElement;
+                    let url = input.value.trim().toLowerCase();
+                    if (!url) return;
+                    
+                    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                      url = `https://${url}`;
+                    }
+
+                    try {
+                      const db = await Database.load('sqlite:seo_kit.db');
+                      await db.execute('INSERT INTO projects (domain) VALUES ($1)', [url]);
+                      window.dispatchEvent(new CustomEvent('project-added'));
+                    } catch (err: any) {
+                      console.log('Project might already exist or error:', err);
+                      // even if it exists, trigger reload to select it
+                      window.dispatchEvent(new CustomEvent('project-added'));
+                    }
+                  }} 
+                  className="relative group"
+                >
+                  <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+                    <Search01Icon size={20} className="text-zinc-500 group-focus-within:text-[var(--accent-primary)] transition-colors" />
+                  </div>
+                  <input
+                    name="domain"
+                    type="text"
+                    placeholder="Enter website URL (e.g., example.com)"
+                    className="w-full bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-full py-4 pl-14 pr-32 text-lg text-white placeholder-zinc-500 focus:outline-none focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)] transition-all shadow-xl"
+                    autoFocus
+                    required
+                  />
+                  <button
+                    type="submit"
+                    className="absolute inset-y-2 right-2 px-6 bg-[var(--accent-primary)] text-black font-semibold rounded-full hover:bg-[var(--accent-hover)] transition-all flex items-center gap-2"
+                  >
+                    Analyze
+                  </button>
+                </form>
               </div>
-              <h2 className="text-3xl font-bold mb-3 tracking-tight">
-                Welcome to <span style={{ fontFamily: '"Press Start 2P", system-ui' }}><span className="text-(--accent-primary)">Ox</span>ide SEO</span>
-              </h2>
-              <p className="text-(--text-secondary) max-w-md mb-8 text-lg">Your new centralized hub for local, privacy-first SEO tools. Please add your first website project using the folder icon in the sidebar to get started.</p>
             </div>
           ) : (
             <>

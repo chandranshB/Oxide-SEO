@@ -41,8 +41,15 @@ export function ProjectSelector({ activeProject, setActiveProject, isExpanded }:
   useEffect(() => {
     loadProjects();
     const handleClickOutside = () => setContextMenu(null);
+    const handleProjectAdded = () => loadProjects();
+    
     document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
+    window.addEventListener('project-added', handleProjectAdded);
+    
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+      window.removeEventListener('project-added', handleProjectAdded);
+    };
   }, []);
 
   const loadProjects = async () => {
