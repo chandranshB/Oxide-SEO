@@ -1,8 +1,11 @@
 ---
 import type { Props } from '@astrojs/starlight/props';
+
+const base = import.meta.env.BASE_URL;
+const homeUrl = base.endsWith('/') ? base : `${base}/`;
 ---
 
-<a href="/" class="site-title font-press-start text-xl md:text-2xl no-underline inline-block">
+<a href={homeUrl} class="site-title font-press-start text-xl md:text-2xl no-underline inline-block">
   <span class="text-green-600 dark:text-green-500">Ox</span>ide-SEO
 </a>
 
