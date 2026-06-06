@@ -1,0 +1,105 @@
+---
+import '../styles/global.css';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Oxide-SEO - Technical SEO Simplified</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script is:inline>
+      const theme = (() => {
+        if (typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme')) {
+          return localStorage.getItem('starlight-theme');
+        }
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      })();
+      document.documentElement.setAttribute('data-theme', theme);
+    </script>
+  </head>
+  <body class="bg-wiki-bg text-wiki-text min-h-screen text-sm md:text-base p-4 md:p-8 flex justify-center font-sans">
+    
+    <!-- Flat Depth Container -->
+    <div class="max-w-5xl w-full bg-wiki-surface shadow-flat-depth rounded-lg overflow-hidden relative border border-wiki-border">
+      
+      <!-- Top Tabs / Navigation -->
+      <nav class="flex border-b border-wiki-border bg-wiki-bg/50 text-sm">
+        <div class="px-5 py-3 font-semibold bg-wiki-surface shadow-[0_1px_0_var(--color-wiki-surface)] z-10 text-wiki-text border-r border-wiki-border">Main Page</div>
+        <a href="/guides/introduction" class="px-5 py-3 text-wiki-link hover:bg-wiki-bg/50 transition-colors border-r border-wiki-border">Documentation</a>
+        <a href="https://github.com/chandranshB/Oxide-SEO" class="px-5 py-3 text-wiki-link hover:bg-wiki-bg/50 transition-colors">View source</a>
+      </nav>
+
+      <div class="p-8 md:p-12">
+        <!-- Title -->
+        <h1 class="text-2xl md:text-3xl font-press-start border-b border-wiki-border pb-3 mb-8 tracking-tight flex items-center">
+          <span class="text-green-600 dark:text-green-500">Ox</span>ide-SEO
+        </h1>
+        
+        <!-- Infobox (Wikipedia design language component) -->
+        <div class="float-right clear-right ml-8 mb-6 shadow-flat-depth rounded-md overflow-hidden bg-wiki-surface w-72 border border-wiki-border mt-1">
+          <div class="p-4 flex justify-center items-center text-sm font-press-start bg-wiki-bg border-b border-wiki-border text-wiki-text tracking-tighter">
+            <span class="text-green-600 dark:text-green-500">Ox</span><span>ide-SEO</span>
+          </div>
+          <table class="w-full text-sm border-collapse">
+            <tbody>
+              <tr class="border-b border-wiki-border/50">
+                <td class="p-3 font-medium text-wiki-text-muted bg-wiki-bg/30 w-1/3">Type</td>
+                <td class="p-3">Desktop Software</td>
+              </tr>
+              <tr class="border-b border-wiki-border/50">
+                <td class="p-3 font-medium text-wiki-text-muted bg-wiki-bg/30">Backend</td>
+                <td class="p-3">Rust (Tauri)</td>
+              </tr>
+              <tr class="border-b border-wiki-border/50">
+                <td class="p-3 font-medium text-wiki-text-muted bg-wiki-bg/30">Frontend</td>
+                <td class="p-3">React</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-wiki-text-muted bg-wiki-bg/30">License</td>
+                <td class="p-3"><a href="https://www.gnu.org/licenses/agpl-3.0.en.html" class="text-wiki-link hover:underline font-semibold" target="_blank" rel="noopener">AGPL v3</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="mb-6 leading-relaxed text-lg text-wiki-text-muted">
+          <strong class="text-wiki-text font-medium">Oxide-SEO</strong> is a fast, locally-run desktop application designed for technical <a href="https://en.wikipedia.org/wiki/Search_engine_optimization" target="_blank" rel="noopener" class="text-wiki-link hover:underline">search engine optimization</a> (SEO) audits and <a href="https://search.google.com/search-console/about" target="_blank" rel="noopener" class="text-wiki-link hover:underline">Google Search Console</a> data analysis. Unlike conventional cloud-based tools, it stores all data in a local SQLite database to bypass arbitrary API limits and subscription fees.
+        </p>
+
+        <h2 class="text-2xl font-medium border-b border-wiki-border pb-2 mt-12 mb-6 tracking-tight text-wiki-text">Core Capabilities</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+          
+          <div class="border border-wiki-border bg-wiki-bg/30 p-5 rounded-md hover:-translate-y-1 hover:shadow-flat-depth transition-all duration-300">
+            <h3 class="text-wiki-link font-medium mb-2">GSC Dashboard</h3>
+            <p class="text-wiki-text-muted text-sm leading-relaxed">Directly interface with the Google Search Console API and cache historical performance data without arbitrary limits.</p>
+          </div>
+
+          <div class="border border-wiki-border bg-wiki-bg/30 p-5 rounded-md hover:-translate-y-1 hover:shadow-flat-depth transition-all duration-300">
+            <h3 class="text-wiki-link font-medium mb-2">Keyword Vault</h3>
+            <p class="text-wiki-text-muted text-sm leading-relaxed">Securely store and organize thousands of keywords to analyze intent, search volume, and ranking gaps locally.</p>
+          </div>
+
+          <div class="border border-wiki-border bg-wiki-bg/30 p-5 rounded-md hover:-translate-y-1 hover:shadow-flat-depth transition-all duration-300">
+            <h3 class="text-wiki-link font-medium mb-2">Site Audit</h3>
+            <p class="text-wiki-text-muted text-sm leading-relaxed">Run a highly concurrent local crawler to discover broken links, analyze response codes, and flag missing meta tags instantly.</p>
+          </div>
+
+          <div class="border border-wiki-border bg-wiki-bg/30 p-5 rounded-md hover:-translate-y-1 hover:shadow-flat-depth transition-all duration-300">
+            <h3 class="text-wiki-link font-medium mb-2">Competitor Analysis</h3>
+            <p class="text-wiki-text-muted text-sm leading-relaxed">Track competitors, monitor keyword overlaps, and identify strategic gaps directly from your desktop.</p>
+          </div>
+
+        </div>
+
+        <h2 class="text-2xl font-medium border-b border-wiki-border pb-2 mt-12 mb-6 tracking-tight text-wiki-text">See also</h2>
+        <ul class="list-none space-y-2 text-wiki-text-muted">
+          <li><a href="/features/site-audit" class="text-wiki-link hover:underline">Web crawler algorithms</a></li>
+          <li><a href="/features/gsc-dashboard" class="text-wiki-link hover:underline">Data caching mechanisms</a></li>
+        </ul>
+
+      </div>
+    </div>
+  </body>
+</html>

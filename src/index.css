@@ -39,6 +39,15 @@ body {
   box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
+/* Remove default focus outlines globally for a cleaner, premium look */
+button:focus, 
+input:focus, 
+select:focus, 
+textarea:focus,
+*[tabindex]:focus {
+  outline: none !important;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 10px;
@@ -57,4 +66,12 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #71717a;
+}
+
+@utility font-pixel {
+  font-family: "Press Start 2P", system-ui;
+}
+
+@utility font-orbitron {
+  font-family: "Orbitron", sans-serif;
 }

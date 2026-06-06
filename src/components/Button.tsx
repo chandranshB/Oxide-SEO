@@ -1,7 +1,7 @@
 import React, { ButtonHTMLAttributes } from 'react';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'active-nav';
   size?: 'sm' | 'md' | 'lg' | 'icon';
   icon?: React.ReactNode;
   fullWidth?: boolean;
@@ -29,6 +29,7 @@ export const Button: React.FC<ButtonProps> = ({
   if (variant === 'secondary') variantClasses = "bg-[var(--bg-surface-hover)] text-white border border-[var(--border-strong)] hover:bg-[var(--border-strong)]";
   if (variant === 'ghost') variantClasses = "bg-transparent text-zinc-400 hover:bg-[var(--bg-surface-hover)] hover:text-white";
   if (variant === 'danger') variantClasses = "bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20";
+  if (variant === 'active-nav') variantClasses = "bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border border-[var(--accent-primary)]/20";
 
   const widthClass = fullWidth ? "w-full" : "";
 
