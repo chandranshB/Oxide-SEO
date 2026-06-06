@@ -1,5 +1,12 @@
 ---
 import '../styles/global.css';
+
+const resolvePath = (path) => {
+  const base = import.meta.env.BASE_URL;
+  const cleanBase = base.endsWith('/') ? base.slice(0, -1) : base;
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${cleanBase}${cleanPath}`;
+};
 ---
 
 <html lang="en">
@@ -27,7 +34,7 @@ import '../styles/global.css';
       <!-- Top Tabs / Navigation -->
       <nav class="flex border-b border-wiki-border bg-wiki-bg/50 text-sm">
         <div class="px-5 py-3 font-semibold bg-wiki-surface shadow-[0_1px_0_var(--color-wiki-surface)] z-10 text-wiki-text border-r border-wiki-border">Main Page</div>
-        <a href="/guides/introduction" class="px-5 py-3 text-wiki-link hover:bg-wiki-bg/50 transition-colors border-r border-wiki-border">Documentation</a>
+        <a href={resolvePath('/guides/introduction')} class="px-5 py-3 text-wiki-link hover:bg-wiki-bg/50 transition-colors border-r border-wiki-border">Documentation</a>
         <a href="https://github.com/chandranshB/Oxide-SEO" class="px-5 py-3 text-wiki-link hover:bg-wiki-bg/50 transition-colors">View source</a>
       </nav>
 
@@ -68,6 +75,16 @@ import '../styles/global.css';
           <strong class="text-wiki-text font-medium">Oxide-SEO</strong> is a fast, locally-run desktop application designed for technical <a href="https://en.wikipedia.org/wiki/Search_engine_optimization" target="_blank" rel="noopener" class="text-wiki-link hover:underline">search engine optimization</a> (SEO) audits and <a href="https://search.google.com/search-console/about" target="_blank" rel="noopener" class="text-wiki-link hover:underline">Google Search Console</a> data analysis. Unlike conventional cloud-based tools, it stores all data in a local SQLite database to bypass arbitrary API limits and subscription fees.
         </p>
 
+        <!-- Download Buttons -->
+        <div class="flex flex-wrap gap-4 mb-12">
+          <a href="https://github.com/chandranshB/Oxide-SEO/releases/latest" target="_blank" rel="noopener" class="bg-wiki-link text-white px-6 py-2.5 rounded-md font-medium hover:bg-opacity-90 transition-all shadow-flat-depth hover:-translate-y-0.5 border border-transparent">
+            Download for Windows
+          </a>
+          <a href="https://github.com/chandranshB/Oxide-SEO/releases/latest" target="_blank" rel="noopener" class="border border-wiki-border bg-wiki-surface text-wiki-text px-6 py-2.5 rounded-md font-medium hover:bg-wiki-bg transition-all shadow-sm hover:-translate-y-0.5">
+            macOS / Linux
+          </a>
+        </div>
+
         <h2 class="text-2xl font-medium border-b border-wiki-border pb-2 mt-12 mb-6 tracking-tight text-wiki-text">Core Capabilities</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
           
@@ -95,8 +112,8 @@ import '../styles/global.css';
 
         <h2 class="text-2xl font-medium border-b border-wiki-border pb-2 mt-12 mb-6 tracking-tight text-wiki-text">See also</h2>
         <ul class="list-none space-y-2 text-wiki-text-muted">
-          <li><a href="/features/site-audit" class="text-wiki-link hover:underline">Web crawler algorithms</a></li>
-          <li><a href="/features/gsc-dashboard" class="text-wiki-link hover:underline">Data caching mechanisms</a></li>
+          <li><a href={resolvePath('/features/site-audit')} class="text-wiki-link hover:underline">Web crawler algorithms</a></li>
+          <li><a href={resolvePath('/features/gsc-dashboard')} class="text-wiki-link hover:underline">Data caching mechanisms</a></li>
         </ul>
 
       </div>
