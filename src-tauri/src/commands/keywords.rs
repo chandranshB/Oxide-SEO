@@ -8,41 +8,139 @@ const STOP_WORDS: &[&str] = &[
     "can", "will", "just", "like", "one", "also", "new", "get", "use", "make", "even", "much", "many", "well", "way", "see", "say", "said"
 ];
 
+use crate::commands::{intent, difficulty, opportunity, cluster};
+
 #[tauri::command]
-pub async fn fetch_keyword_suggestions(seed: String) -> Result<Vec<String>, String> {
-    let client = Client::new();
-    let alphabet: Vec<char> = "abcdefghijklmnopqrstuvwxyz".chars().collect();
-    let mut futures = vec![];
+pub async fn discover_keywords(seed: String, mode: String) -> Result<KeywordDiscoveryResult, String> {
+    let client = Client::builder()
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
+        .build()
+        .map_err(|e| e.to_string())?;
 
-    let base_url = format!("http://google.com/complete/search?output=chrome&q={}", urlencoding::encode(&seed));
-    let base_client = client.clone();
-    futures.push(tokio::spawn(async move {
-        fetch_single(&base_client, &base_url).await
-    }));
-
-    for letter in alphabet {
-        let query = format!("{} {}", seed, letter);
-        let url = format!("http://google.com/complete/search?output=chrome&q={}", urlencoding::encode(&query));
-        let c = client.clone();
-        futures.push(tokio::spawn(async move {
-            fetch_single(&c, &url).await
-        }));
+    let mut patterns = Vec::new();
+    let safe_seed = seed.trim().to_lowercase();
+    
+    // Base and Alphabet
+    patterns.push((safe_seed.clone(), "base"));
+    for c in 'a'..='z' {
+        patterns.push((format!("{} {}", safe_seed, c), "alphabet"));
     }
 
-    let results = join_all(futures).await;
-    let mut unique_keywords = HashSet::new();
+    if mode == "deep" {
+        // Questions
+        let questions = ["how to", "what is", "why", "when", "where", "can", "does", "is"];
+        for q in questions { patterns.push((format!("{} {}", q, safe_seed), "question")); }
 
-    for res in results {
-        if let Ok(Ok(keywords)) = res {
-            for kw in keywords {
-                unique_keywords.insert(kw);
+        // Intent
+        let intents = ["best", "top", "review", "buy", "cheap", "free", "tutorial", "guide"];
+        for i in intents { patterns.push((format!("{} {}", i, safe_seed), "intent")); }
+        patterns.push((format!("{} review", safe_seed), "intent"));
+
+        // Comparison
+        let comparisons = ["vs", "alternative", "or"];
+        for c in comparisons { patterns.push((format!("{} {}", safe_seed, c), "comparison")); }
+
+        // Prepositions
+        let prepositions = ["for", "with", "without", "near", "like"];
+        for p in prepositions { patterns.push((format!("{} {}", safe_seed, p), "preposition")); }
+
+        // Year
+        patterns.push((format!("{} 2025", safe_seed), "year"));
+        patterns.push((format!("{} 2026", safe_seed), "year"));
+    }
+
+    let mut unique_keywords = HashMap::new();
+    
+    // Batch requests to avoid rate limits
+    for chunk in patterns.chunks(10) {
+        let mut futures = vec![];
+        for (query, source) in chunk {
+            let url = format!("http://google.com/complete/search?output=chrome&q={}&hl=en", urlencoding::encode(query));
+            let c = client.clone();
+            let src = source.to_string();
+            futures.push(tokio::spawn(async move {
+                let res = fetch_single(&c, &url).await.unwrap_or_default();
+                (res, src)
+            }));
+        }
+
+        let chunk_results = join_all(futures).await;
+        for res in chunk_results {
+            if let Ok((keywords, source)) = res {
+                for kw in keywords {
+                    // Only insert if we haven't seen it, to keep the first source
+                    let kw_lower = kw.to_lowercase();
+                    unique_keywords.entry(kw_lower).or_insert(source.clone());
+                }
             }
         }
+        
+        // Brief delay between batches
+        tokio::time::sleep(tokio::time::Duration::from_millis(150)).await;
     }
 
-    let mut sorted_keywords: Vec<String> = unique_keywords.into_iter().collect();
-    sorted_keywords.sort();
-    Ok(sorted_keywords)
+    let mut results: Vec<KeywordResult> = Vec::new();
+    let mut intent_breakdown = IntentBreakdown { informational: 0, commercial: 0, transactional: 0, navigational: 0 };
+
+    for (kw, source) in unique_keywords {
+        let (intent, confidence) = intent::classify_intent(&kw);
+        
+        match intent {
+            SearchIntent::Informational => intent_breakdown.informational += 1,
+            SearchIntent::Commercial => intent_breakdown.commercial += 1,
+            SearchIntent::Transactional => intent_breakdown.transactional += 1,
+            SearchIntent::Navigational => intent_breakdown.navigational += 1,
+        }
+
+        let (diff_score, diff_label) = difficulty::estimate_difficulty(&kw, &intent);
+        let word_count = kw.split_whitespace().count();
+
+        let kw_res = KeywordResult {
+            keyword: kw.clone(),
+            intent,
+            intent_confidence: confidence,
+            difficulty: diff_score,
+            difficulty_label: diff_label,
+            opportunity: 0, // Will compute after clustering
+            word_count,
+            cluster_id: None,
+            source: source.clone(),
+        };
+
+        results.push(kw_res);
+    }
+
+    let total_keywords = results.len();
+
+    // Cluster keywords
+    let (mut clusters, mut unclustered) = cluster::cluster_keywords(results);
+
+    // Compute opportunity scores now that we have clusters
+    for c in &mut clusters {
+        let mut total_opp: u32 = 0;
+        let c_size = c.keywords.len();
+        for kw in &mut c.keywords {
+            kw.opportunity = opportunity::calculate_opportunity(kw, c_size);
+            total_opp += kw.opportunity as u32;
+        }
+        c.avg_opportunity = if c_size > 0 { (total_opp / c_size as u32) as u8 } else { 0 };
+    }
+
+    for kw in &mut unclustered {
+        kw.opportunity = opportunity::calculate_opportunity(kw, 1);
+    }
+
+    // Sort clusters by avg opportunity descending
+    clusters.sort_by(|a, b| b.avg_opportunity.cmp(&a.avg_opportunity));
+
+    Ok(KeywordDiscoveryResult {
+        clusters,
+        unclustered,
+        total_keywords,
+        discovery_mode: mode,
+        seed: safe_seed,
+        intent_breakdown,
+    })
 }
 
 async fn fetch_single(client: &Client, url: &str) -> Result<Vec<String>, String> {

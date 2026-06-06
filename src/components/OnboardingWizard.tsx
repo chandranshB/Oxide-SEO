@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Search01Icon, ArrowRight01Icon, ArrowLeft01Icon, Home01Icon, Activity01Icon, Shield01Icon } from 'hugeicons-react';
 
 interface OnboardingWizardProps {
+  initialStep?: number;
   onComplete: (domain: string) => void;
 }
 
-export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
-  const [step, setStep] = useState(1);
+export function OnboardingWizard({ initialStep = 1, onComplete }: OnboardingWizardProps) {
+  const [step, setStep] = useState(initialStep);
   const [domain, setDomain] = useState('');
   const [error, setError] = useState<string | null>(null);
 

@@ -48,6 +48,8 @@ function App() {
         domain: hostname 
       });
       
+      localStorage.setItem('has_completed_onboarding', 'true');
+      
       window.dispatchEvent(new CustomEvent('project-added'));
     } catch (err: any) {
       console.log('Project might already exist or error:', err);
@@ -201,18 +203,18 @@ function App() {
       {appState === 'splash' && <SplashScreen onComplete={handleSplashComplete} />}
       {appState === 'support' && <SupportModal onComplete={handleSupportComplete} />}
       
-      <div className={`flex flex-col h-screen bg-[var(--bg-base)] text-white overflow-hidden transition-opacity duration-1000 ${appState === 'ready' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+      <div className={`flex flex-col h-screen bg-(--bg-base) text-white overflow-hidden transition-opacity duration-1000 ${appState === 'ready' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
       <Titlebar />
       <div className="flex flex-1 overflow-hidden relative">
         {/* Side Panel Island */}
         {activeProject && (
           <aside 
-            className={`relative transition-all duration-300 ease-in-out my-4 ml-4 mr-2 rounded-2xl border border-[var(--border-strong)] bg-[var(--bg-surface)] flex flex-col shadow-lg z-10 ${isExpanded ? 'w-64' : 'w-[84px]'}`}
+            className={`relative transition-all duration-300 ease-in-out my-4 ml-4 mr-2 rounded-2xl border border-(--border-strong) bg-(--bg-surface) flex flex-col shadow-lg z-10 ${isExpanded ? 'w-64' : 'w-[84px]'}`}
           >
-          <div className={`p-6 border-b border-[var(--border-strong)] flex items-center transition-all duration-300 ${isExpanded ? 'justify-start' : 'justify-center'}`}>
+          <div className={`p-6 border-b border-(--border-strong) flex items-center transition-all duration-300 ${isExpanded ? 'justify-start' : 'justify-center'}`}>
             <div className={`${isExpanded ? 'overflow-hidden' : 'overflow-visible'} whitespace-nowrap flex flex-col justify-center transition-all duration-300 ${isExpanded ? 'items-start' : 'items-center'}`}>
               <h1 className="font-bold tracking-tight flex items-end transition-all duration-300" style={{ fontFamily: '"Press Start 2P", system-ui' }}>
-                <span className={`text-[var(--accent-primary)] transition-all duration-300 ${isExpanded ? 'text-xl' : 'text-2xl mt-1'}`}>Ox</span>
+                <span className={`text-(--accent-primary) transition-all duration-300 ${isExpanded ? 'text-xl' : 'text-2xl mt-1'}`}>Ox</span>
                 <span className={`transition-all duration-300 overflow-hidden text-xl ${isExpanded ? 'max-w-[150px] opacity-100' : 'max-w-0 opacity-0'}`}>
                   ide SEO
                 </span>
@@ -277,17 +279,17 @@ function App() {
 
           </nav>
           
-          <div className={`p-4 border-t border-[var(--border-strong)] flex ${isExpanded ? 'justify-between' : 'flex-col gap-4 items-center'} shrink-0`}>
+          <div className={`p-4 border-t border-(--border-strong) flex ${isExpanded ? 'justify-between' : 'flex-col gap-4 items-center'} shrink-0`}>
             <button 
               onClick={() => handleTabChange('settings')}
-              className={`transition-colors p-2 rounded-xl ${activeTab === 'settings' ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border border-[var(--accent-primary)]/20 shadow-sm' : 'text-zinc-400 hover:text-white hover:bg-[var(--bg-surface-hover)]'}`} 
+              className={`transition-colors p-2 rounded-xl ${activeTab === 'settings' ? 'bg-(--accent-primary)/10 text-(--accent-primary) border border-(--accent-primary)/20 shadow-sm' : 'text-zinc-400 hover:text-white hover:bg-(--bg-surface-hover)'}`} 
               title="Settings"
             >
               <Settings01Icon size={20} />
             </button>
             <button 
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-zinc-400 hover:text-white transition-colors p-2 rounded-xl hover:bg-[var(--bg-surface-hover)]"
+              className="text-zinc-400 hover:text-white transition-colors p-2 rounded-xl hover:bg-(--bg-surface-hover)"
               title="Toggle Sidebar"
             >
               {isExpanded ? <ArrowLeft01Icon size={20} /> : <Menu01Icon size={20} />}
@@ -300,10 +302,13 @@ function App() {
         <main className="flex-1 overflow-y-auto relative flex flex-col">
           {isInitializing ? (
             <div className="flex-1 flex items-center justify-center">
-              <div className="w-8 h-8 border-4 border-[var(--accent-primary)]/20 border-t-[var(--accent-primary)] rounded-full animate-spin" />
+              <div className="w-8 h-8 border-4 border-(--accent-primary)/20 border-t-(--accent-primary) rounded-full animate-spin" />
             </div>
           ) : !activeProject ? (
-            <OnboardingWizard onComplete={handleOnboardingComplete} />
+            <OnboardingWizard 
+              initialStep={localStorage.getItem('has_completed_onboarding') === 'true' ? 3 : 1}
+              onComplete={handleOnboardingComplete} 
+            />
           ) : activeTab === 'settings' ? (
             <Settings />
           ) : (

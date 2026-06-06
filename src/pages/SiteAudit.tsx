@@ -723,10 +723,12 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
     });
   };
 
+  const hasStarted = audits.length > 0 || isAuditing;
+
   return (
-    <div className="flex flex-col h-full bg-[var(--bg-base)] overflow-hidden relative">
+    <div className={`flex flex-col h-full bg-[var(--bg-base)] overflow-hidden relative ${!hasStarted && !selectedCategory ? 'justify-center items-center' : ''}`}>
       {/* Dynamic Top Navigation Bar */}
-      {!selectedCategory ? (
+      {!selectedCategory && hasStarted && (
         <div className="flex items-center justify-between p-6 pb-2 shrink-0 z-10">
           <div className="flex items-center gap-6">
             <div className="flex flex-col">
@@ -794,7 +796,9 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
             </Button>
           </div>
         </div>
-      ) : (
+      )}
+
+      {selectedCategory && (
         <div className="flex items-center px-6 py-4 shrink-0 z-10 relative">
           <button 
             onClick={() => setSelectedCategory(null)}
@@ -818,26 +822,37 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto p-8 relative">
-        <div className="max-w-7xl mx-auto pb-32">
+      <div className={`flex-1 overflow-y-auto p-8 relative ${!hasStarted ? 'flex flex-col justify-center' : ''}`}>
+        <div className={`max-w-7xl mx-auto ${hasStarted ? 'pb-32' : 'w-full'}`}>
 
           {/* Empty State */}
-          {!isAuditing && audits.length === 0 && (
-            <div className="flex flex-col items-center justify-center text-center p-16 animate-in fade-in zoom-in duration-500 relative">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[var(--accent-primary)]/10 rounded-full blur-[80px] pointer-events-none animate-pulse" />
-              <div className="w-24 h-24 bg-white/5 backdrop-blur-md rounded-[2rem] flex items-center justify-center border border-white/10 mb-8 shadow-2xl text-[var(--accent-primary)] relative z-10">
-                <Search01Icon size={48} strokeWidth={1.5} />
-              </div>
-              <h2 className="text-3xl font-bold mb-4 tracking-tight text-white relative z-10">Ready when you are.</h2>
-              <p className="text-zinc-400 max-w-md mb-10 leading-relaxed text-lg relative z-10">
-                Your workspace is perfectly set up. Run your first local audit to discover exactly how to make <span className="text-zinc-200 font-medium">{activeProject.domain}</span> perform flawlessly.
+          {!hasStarted && (
+            <div className="flex flex-col items-center justify-center text-center animate-in fade-in duration-500 relative w-full max-w-3xl mx-auto">
+              <h1 className="text-4xl md:text-5xl font-medium tracking-tight text-white flex items-center justify-center gap-4 mb-4">
+                <Globe02Icon size={48} className="text-[var(--accent-primary)]" />
+                Site Audit
+              </h1>
+              <p className="text-zinc-500 text-lg mb-12">
+                Your workspace is ready. Run your first deep crawl to discover exactly how to make <span className="text-zinc-300 font-medium">{activeProject.domain}</span> perform flawlessly.
               </p>
-              <Button 
-                onClick={handleStartAudit} 
-                className="px-8 h-14 text-lg font-bold shadow-[0_0_40px_rgba(var(--accent-primary-rgb),0.3)] hover:scale-105 transition-all relative z-10 rounded-2xl"
-              >
-                Begin First Crawl
-              </Button>
+              
+              <div className="flex items-center justify-center gap-4 w-full">
+                <Button 
+                  variant="secondary" 
+                  onClick={() => setIsSettingsModalOpen(true)} 
+                  className="h-14 px-6 rounded-2xl font-medium bg-[#121214] border border-[var(--border-subtle)] hover:bg-[#18181b] transition-all text-zinc-300"
+                >
+                  <Settings01Icon size={20} className="text-zinc-400 mr-2" />
+                  Settings
+                </Button>
+                <Button 
+                  onClick={handleStartAudit} 
+                  className="px-10 h-14 text-lg font-semibold rounded-2xl transition-all shadow-[0_0_30px_rgba(var(--accent-primary-rgb),0.15)] hover:shadow-[0_0_40px_rgba(var(--accent-primary-rgb),0.3)]"
+                >
+                  <PlayIcon size={20} className="mr-2" />
+                  Begin First Crawl
+                </Button>
+              </div>
             </div>
           )}
 

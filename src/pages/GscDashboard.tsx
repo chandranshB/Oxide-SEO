@@ -178,9 +178,11 @@ export const GscDashboard: React.FC = () => {
   const avgPos = totalKeywords > 0 ? (metrics.reduce((sum, m) => sum + m.average_position, 0) / totalKeywords).toFixed(1) : '0.0';
 
   return (
-    <div className="p-8 max-w-6xl mx-auto flex flex-col h-full">
-      {isConnected && (
-        <header className="flex justify-between items-start mb-8 pb-6 border-b border-[var(--border-strong)]">
+    <div className={`flex flex-col h-full bg-[var(--bg-base)] overflow-hidden relative ${!isConnected ? 'justify-center items-center' : ''}`}>
+      <div className={`flex-1 overflow-y-auto p-8 relative w-full ${!isConnected ? 'flex flex-col justify-center' : ''}`}>
+        <div className={`mx-auto ${isConnected ? 'max-w-6xl pb-32' : 'w-full max-w-3xl'}`}>
+          {isConnected && (
+            <header className="flex justify-between items-start mb-8 pb-6 border-b border-[var(--border-strong)]">
         <div>
           <h1 className="text-2xl font-semibold mb-2">Search Console Dashboard</h1>
           <p className="text-zinc-400">
@@ -255,37 +257,27 @@ export const GscDashboard: React.FC = () => {
       )}
 
       {!isConnected ? (
-        <div className="flex flex-col items-center justify-center py-20 px-4">
-          <div className="max-w-xl w-full text-center relative mt-10">
-            {/* Ambient background blur - very subtle */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none" />
-            
-            <div className="relative z-10 flex flex-col items-center">
-              <div className="w-24 h-24 bg-gradient-to-br from-emerald-500/20 to-transparent rounded-full flex items-center justify-center mb-8 border border-emerald-500/20 shadow-[0_0_60px_-15px_rgba(16,185,129,0.3)]">
-                <AnalyticsUpIcon size={40} className="text-emerald-400" />
-              </div>
-              
-              <h2 className="text-4xl font-bold text-white mb-4 tracking-tight">Google Search Console</h2>
-              <p className="text-zinc-400 text-lg mb-12 max-w-md mx-auto leading-relaxed font-medium">
-                Uncover <span className="text-emerald-400">striking distance</span> keywords—pages ranking on page 2 that can easily be pushed to page 1 for massive traffic gains.
-              </p>
-              
-              <button 
-                onClick={() => setIsModalOpen(true)}
-                className="group relative h-14 px-8 bg-white hover:bg-zinc-100 text-zinc-900 text-base font-bold rounded-full transition-all duration-300 shadow-[0_0_40px_-10px_rgba(255,255,255,0.2)] hover:shadow-[0_0_60px_-10px_rgba(255,255,255,0.4)] hover:-translate-y-1 overflow-hidden"
-              >
-                <span className="relative z-10 flex items-center gap-3">
-                  <svg className="w-6 h-6" viewBox="0 0 48 48">
-                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                  </svg>
-                  Sign in with Google
-                </span>
-              </button>
-            </div>
-          </div>
+        <div className="flex flex-col items-center justify-center text-center animate-in fade-in duration-500 relative w-full max-w-3xl mx-auto">
+          <h1 className="text-4xl md:text-5xl font-medium tracking-tight text-white flex items-center justify-center gap-4 mb-4">
+            <AnalyticsUpIcon size={48} className="text-emerald-400" />
+            Search Console
+          </h1>
+          <p className="text-zinc-500 text-lg mb-12">
+            Uncover <span className="text-zinc-300 font-medium">striking distance</span> keywords—pages ranking on page 2 that can easily be pushed to page 1 for massive traffic gains.
+          </p>
+          
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="group relative h-14 px-10 bg-white hover:bg-zinc-100 text-zinc-900 text-lg font-semibold rounded-2xl transition-all duration-300 shadow-[0_0_40px_-10px_rgba(255,255,255,0.2)] hover:shadow-[0_0_60px_-10px_rgba(255,255,255,0.4)] hover:-translate-y-1 overflow-hidden inline-flex items-center justify-center gap-3"
+          >
+            <svg className="w-5 h-5 shrink-0" viewBox="0 0 48 48">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            </svg>
+            Sign in with Google
+          </button>
         </div>
       ) : (
         <>
@@ -422,6 +414,8 @@ export const GscDashboard: React.FC = () => {
           </Card>
         </>
       )}
+        </div>
+      </div>
     </div>
   );
 };

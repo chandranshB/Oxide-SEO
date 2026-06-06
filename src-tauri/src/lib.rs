@@ -97,6 +97,35 @@ pub fn run() {
                   ALTER TABLE audit_pages ADD COLUMN crawl_depth INTEGER DEFAULT 0;",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 7,
+            description: "add_keyword_sessions",
+            sql: "CREATE TABLE IF NOT EXISTS keyword_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER,
+                seed TEXT NOT NULL,
+                mode TEXT NOT NULL DEFAULT 'quick',
+                total_keywords INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
+            );
+            CREATE TABLE IF NOT EXISTS keyword_results (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id INTEGER NOT NULL,
+                keyword TEXT NOT NULL,
+                intent TEXT NOT NULL,
+                intent_confidence TEXT NOT NULL,
+                difficulty INTEGER DEFAULT 50,
+                opportunity INTEGER DEFAULT 50,
+                word_count INTEGER DEFAULT 0,
+                cluster_label TEXT,
+                source TEXT,
+                is_saved BOOLEAN DEFAULT 0,
+                user_notes TEXT,
+                FOREIGN KEY(session_id) REFERENCES keyword_sessions(id) ON DELETE CASCADE
+            );",
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()
@@ -107,7 +136,7 @@ pub fn run() {
         )
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
-            commands::keywords::fetch_keyword_suggestions,
+            commands::keywords::discover_keywords,
             commands::keywords::scrape_competitor_outline,
             commands::oauth::start_oauth_server,
             commands::oauth::exchange_oauth_token,
@@ -116,3 +145,4 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+

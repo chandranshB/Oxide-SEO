@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
 // ─── Crawl Progress ───
 
@@ -166,3 +166,56 @@ pub struct CompetitorData {
     pub headings: Vec<Heading>,
     pub top_keywords: Vec<KeywordFreq>,
 }
+
+// ─── Keyword Intelligence Types ───
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct KeywordResult {
+    pub keyword: String,
+    pub intent: SearchIntent,
+    pub intent_confidence: String,
+    pub difficulty: u8,
+    pub difficulty_label: String,
+    pub opportunity: u8,
+    pub word_count: usize,
+    pub cluster_id: Option<usize>,
+    pub source: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum SearchIntent {
+    Informational,
+    Commercial,
+    Transactional,
+    Navigational,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct KeywordCluster {
+    pub id: usize,
+    pub label: String,
+    pub keywords: Vec<KeywordResult>,
+    pub avg_difficulty: u8,
+    pub avg_opportunity: u8,
+    pub primary_intent: SearchIntent,
+    pub keyword_count: usize,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct KeywordDiscoveryResult {
+    pub clusters: Vec<KeywordCluster>,
+    pub unclustered: Vec<KeywordResult>,
+    pub total_keywords: usize,
+    pub discovery_mode: String,
+    pub seed: String,
+    pub intent_breakdown: IntentBreakdown,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct IntentBreakdown {
+    pub informational: usize,
+    pub commercial: usize,
+    pub transactional: usize,
+    pub navigational: usize,
+}
+
