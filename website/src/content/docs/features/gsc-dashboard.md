@@ -1,17 +1,21 @@
 ---
-title: GSC Dashboard
-description: Learn how to connect and use the GSC Dashboard in Oxide-SEO.
+title: Your Google Search Data
+description: Learn how to connect and explore your website's search performance.
 ---
 
-The GSC Dashboard allows you to directly interface with the Google Search Console API.
+The Search Dashboard lets you securely bring your Google Search Console data right onto your desktop. 
 
 ## Connecting Your Account
 
-To get started, you'll need to authenticate your Google account via OAuth. 
-1. Navigate to Settings > Integrations.
+To get started, we just need your permission to view your search data. Don't worry, we don't store this anywhere but on your own computer!
+1. Go to **Settings** > **Integrations** in the app.
 2. Click **Connect Google Account**.
-3. Authorize the application.
+3. Follow the Google sign-in steps to grant permission.
 
-## Caching Data
+## Keeping Your Data Safe & Fast
 
-Because Oxide-SEO runs locally, it caches all your GSC data in a fast SQLite database, allowing you to bypass Google's arbitrary API limits when querying historical data.
+Once connected, Oxide-SEO saves your performance history on your computer. This means you can look back at years of data instantly, without hitting annoying Google limits or waiting for slow dashboards to load.
+
+## Data Caching Engine
+
+To provide a fluid analytical experience, the dashboard utilizes an incremental background sync engine. Rather than fetching data from Google's API on every chart load, historical metrics are safely mirrored to your local database. This strategy not only protects you from frustrating API rate limits but also enables zero-latency filtering and sorting across millions of rows.
