@@ -233,7 +233,7 @@ function App() {
               <div className={`transition-all duration-300 overflow-hidden ${isExpanded ? 'max-h-10 opacity-100' : 'max-h-0 opacity-0'}`}>
                 <div className="px-4 text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-3 mt-1">Your Site's Health</div>
               </div>
-              {!isExpanded && <div className="h-px bg-white/[0.04] w-8 mx-auto mb-3 mt-1" />}
+              {!isExpanded && <div className="h-px bg-white/4 w-8 mx-auto mb-3 mt-1" />}
               
               <div className="flex flex-col gap-2">
                 <Button 
@@ -279,7 +279,7 @@ function App() {
               <div className={`transition-all duration-300 overflow-hidden ${isExpanded ? 'max-h-10 opacity-100' : 'max-h-0 opacity-0'}`}>
                 <div className="px-4 text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-3">Growth & Discovery</div>
               </div>
-              {!isExpanded && <div className="h-px bg-white/[0.04] w-8 mx-auto mb-3" />}
+              {!isExpanded && <div className="h-px bg-white/4 w-8 mx-auto mb-3" />}
               
               <div className="flex flex-col gap-2">
                 <Button 

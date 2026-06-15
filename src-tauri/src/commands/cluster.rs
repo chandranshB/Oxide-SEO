@@ -6,7 +6,7 @@ const STOP_WORDS: &[&str] = &[
     "can", "will", "just", "like", "one", "also", "new", "get", "use", "make", "even", "much", "many", "well", "way", "see", "say", "said"
 ];
 
-pub fn cluster_keywords(mut keywords: Vec<KeywordResult>) -> (Vec<KeywordCluster>, Vec<KeywordResult>) {
+pub fn cluster_keywords(keywords: Vec<KeywordResult>) -> (Vec<KeywordCluster>, Vec<KeywordResult>) {
     let stop_words_set: HashSet<&str> = STOP_WORDS.iter().cloned().collect();
     let mut bigram_freq: HashMap<String, usize> = HashMap::new();
     let mut keyword_bigrams: HashMap<usize, Vec<String>> = HashMap::new();
@@ -36,7 +36,7 @@ pub fn cluster_keywords(mut keywords: Vec<KeywordResult>) -> (Vec<KeywordCluster
     }
 
     // Filter out bigrams that only appear once to create meaningful clusters
-    let mut valid_bigrams: HashSet<String> = bigram_freq.into_iter()
+    let valid_bigrams: HashSet<String> = bigram_freq.into_iter()
         .filter(|(_, count)| *count > 1)
         .map(|(bg, _)| bg)
         .collect();
@@ -48,7 +48,7 @@ pub fn cluster_keywords(mut keywords: Vec<KeywordResult>) -> (Vec<KeywordCluster
     for (i, mut kw) in keywords.into_iter().enumerate() {
         let bigrams = keyword_bigrams.get(&i).unwrap();
         let mut best_bigram = None;
-        let mut max_len = 0; // Prefer longer shared phrases if available, though bigrams are length 2.
+        // Prefer longer shared phrases if available, though bigrams are length 2.
 
         for bg in bigrams {
             if valid_bigrams.contains(bg) {

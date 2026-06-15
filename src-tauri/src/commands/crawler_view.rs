@@ -1,11 +1,12 @@
 use reqwest::Client;
 use scraper::{Html, Selector};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct HeadingNode {
     pub level: usize,
     pub text: String,
+    pub content: String,
 }
 
 #[derive(Serialize)]
@@ -53,15 +54,66 @@ pub async fn fetch_page_content_view(url: String) -> Result<CrawlerViewResult, S
         .and_then(|el| el.value().attr("content"))
         .map(|s| s.trim().to_string());
 
-    // Extract Headings
-    let mut headings = Vec::new();
-    let headings_sel = Selector::parse("h1, h2, h3, h4, h5, h6").unwrap();
-    for heading in document.select(&headings_sel) {
-        let tag = heading.value().name();
-        let level = tag[1..].parse().unwrap_or(0);
-        let text = heading.text().collect::<Vec<_>>().join(" ").trim().to_string();
-        if !text.is_empty() {
-            headings.push(HeadingNode { level, text });
+    // Extract Headings and Raw Text
+    let mut headings: Vec<HeadingNode> = Vec::new();
+    let mut current_heading_idx: Option<usize> = None;
+    let mut full_text = String::new();
+
+    let body_selector = Selector::parse("body").unwrap();
+    if let Some(body) = document.select(&body_selector).next() {
+        for node in body.descendants() {
+            match node.value() {
+                scraper::Node::Element(el) => {
+                    let name = el.name();
+                    if matches!(name, "h1" | "h2" | "h3" | "h4" | "h5" | "h6") {
+                        if let Some(el_ref) = scraper::ElementRef::wrap(node) {
+                            let text = el_ref.text().collect::<Vec<_>>().join(" ").trim().to_string();
+                            if !text.is_empty() {
+                                let level = name[1..].parse().unwrap_or(0);
+                                headings.push(HeadingNode {
+                                    level,
+                                    text,
+                                    content: String::new(),
+                                });
+                                current_heading_idx = Some(headings.len() - 1);
+                            }
+                        }
+                    }
+                }
+                scraper::Node::Text(text) => {
+                    let mut is_valid_text = true;
+                    let mut is_inside_heading = false;
+
+                    for ancestor in node.ancestors() {
+                        if let scraper::Node::Element(el) = ancestor.value() {
+                            let name = el.name();
+                            if name == "script" || name == "style" || name == "noscript" {
+                                is_valid_text = false;
+                                break;
+                            }
+                            if matches!(name, "h1" | "h2" | "h3" | "h4" | "h5" | "h6") {
+                                is_inside_heading = true;
+                            }
+                        }
+                    }
+
+                    if is_valid_text {
+                        let trimmed = text.text.trim();
+                        if !trimmed.is_empty() {
+                            full_text.push_str(trimmed);
+                            full_text.push('\n');
+                            
+                            if !is_inside_heading {
+                                if let Some(idx) = current_heading_idx {
+                                    headings[idx].content.push_str(trimmed);
+                                    headings[idx].content.push('\n');
+                                }
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
         }
     }
 
@@ -75,32 +127,22 @@ pub async fn fetch_page_content_view(url: String) -> Result<CrawlerViewResult, S
         }
     }
 
-    // Extract Raw Text (strip script, style)
-    let mut full_text = String::new();
-    let body_selector = Selector::parse("body").unwrap();
-    if let Some(body) = document.select(&body_selector).next() {
-        for node in body.descendants() {
-            if let scraper::Node::Text(text) = node.value() {
-                if let Some(parent) = node.parent() {
-                    if let scraper::Node::Element(el) = parent.value() {
-                        let name = el.name();
-                        if name != "script" && name != "style" && name != "noscript" {
-                            full_text.push_str(&text.text);
-                            full_text.push('\n');
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // Cleanup raw_text (remove multiple newlines and spaces)
+    // Cleanup text fields
     let cleaned_raw_text = full_text
         .split('\n')
         .map(|s| s.trim())
         .filter(|s| !s.is_empty())
         .collect::<Vec<_>>()
         .join("\n");
+
+    for heading in &mut headings {
+        heading.content = heading.content
+            .split('\n')
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join("\n");
+    }
 
     Ok(CrawlerViewResult {
         url,
