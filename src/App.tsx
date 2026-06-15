@@ -4,7 +4,7 @@ import { CompetitorAnalysis } from './pages/CompetitorAnalysis';
 import { GscDashboard } from './pages/GscDashboard';
 import { SiteAudit } from './pages/SiteAudit';
 import { Button } from './components/Button';
-import { Search01Icon, Menu01Icon, ArrowLeft01Icon, File01Icon, AnalyticsUpIcon, WebDesign01Icon, Settings01Icon } from 'hugeicons-react';
+import { Search01Icon, Menu01Icon, ArrowLeft01Icon, File01Icon, AnalyticsUpIcon, WebDesign01Icon, Settings01Icon, TextFontIcon } from 'hugeicons-react';
 import { Titlebar } from './components/Titlebar';
 import { ProjectSelector, Project } from './components/ProjectSelector';
 import { Settings } from './pages/Settings';
@@ -16,7 +16,7 @@ import { OnboardingWizard } from './components/OnboardingWizard';
 
 function App() {
   const [appState, setAppState] = useState<'splash' | 'support' | 'ready'>('splash');
-  const [activeTab, setActiveTab] = useState<'vault' | 'competitor' | 'gsc' | 'audit' | 'settings'>('audit');
+  const [activeTab, setActiveTab] = useState<'vault' | 'competitor' | 'gsc' | 'audit' | 'audit_content' | 'settings'>('audit');
   const [isExpanded, setIsExpanded] = useState(true);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [projectsCount, setProjectsCount] = useState<number>(0);
@@ -227,56 +227,86 @@ function App() {
           
           <ProjectSelector activeProject={activeProject} setActiveProject={setActiveProject} isExpanded={isExpanded} />
           
-          <nav className="flex-1 p-4 flex flex-col gap-3 overflow-hidden">
-            <Button 
-              variant={activeTab === 'audit' ? 'active-nav' : 'ghost'} 
-              className={`transition-all duration-300 ease-in-out overflow-hidden flex items-center ${!isExpanded ? 'w-12 h-12 p-0 justify-center rounded-xl mx-auto' : 'w-full justify-start px-4'}`}
-              onClick={() => handleTabChange('audit')}
-              title="Site Audit"
-            >
-              <span className="flex items-center justify-center shrink-0">
-                <WebDesign01Icon size={20} />
-              </span>
-              {isExpanded && <span className="ml-3 truncate font-medium">Site Audit</span>}
-            </Button>
+          <nav className="flex-1 p-4 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-none">
+            {/* Category: Site Health */}
+            <div className="mb-2">
+              <div className={`transition-all duration-300 overflow-hidden ${isExpanded ? 'max-h-10 opacity-100' : 'max-h-0 opacity-0'}`}>
+                <div className="px-4 text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-3 mt-1">Your Site's Health</div>
+              </div>
+              {!isExpanded && <div className="h-px bg-white/[0.04] w-8 mx-auto mb-3 mt-1" />}
+              
+              <div className="flex flex-col gap-2">
+                <Button 
+                  variant={activeTab === 'audit' ? 'active-nav' : 'ghost'} 
+                  className={`transition-all duration-300 ease-in-out overflow-hidden flex items-center ${!isExpanded ? 'w-12 h-12 p-0 justify-center rounded-xl mx-auto' : 'w-full justify-start px-4'}`}
+                  onClick={() => handleTabChange('audit')}
+                  title="Site Audit"
+                >
+                  <span className="flex items-center justify-center shrink-0">
+                    <WebDesign01Icon size={20} />
+                  </span>
+                  {isExpanded && <span className="ml-3 truncate font-medium">Site Audit</span>}
+                </Button>
 
-            <Button 
-              variant={activeTab === 'gsc' ? 'active-nav' : 'ghost'} 
-              className={`transition-all duration-300 ease-in-out overflow-hidden flex items-center ${!isExpanded ? 'w-12 h-12 p-0 justify-center rounded-xl mx-auto' : 'w-full justify-start px-4'}`}
-              onClick={() => handleTabChange('gsc')}
-              title="Search Console"
-            >
-              <span className="flex items-center justify-center shrink-0">
-                <AnalyticsUpIcon size={20} />
-              </span>
-              {isExpanded && <span className="ml-3 truncate font-medium">Search Console</span>}
-            </Button>
+                <Button 
+                  variant={activeTab === 'audit_content' ? 'active-nav' : 'ghost'} 
+                  className={`transition-all duration-300 ease-in-out overflow-hidden flex items-center ${!isExpanded ? 'w-12 h-12 p-0 justify-center rounded-xl mx-auto' : 'w-full justify-start px-4'}`}
+                  onClick={() => handleTabChange('audit_content')}
+                  title="Content Quality"
+                >
+                  <span className="flex items-center justify-center shrink-0">
+                    <TextFontIcon size={20} />
+                  </span>
+                  {isExpanded && <span className="ml-3 truncate font-medium">Content Quality</span>}
+                </Button>
 
-            <Button 
-              variant={activeTab === 'vault' ? 'active-nav' : 'ghost'} 
-              className={`transition-all duration-300 ease-in-out overflow-hidden flex items-center ${!isExpanded ? 'w-12 h-12 p-0 justify-center rounded-xl mx-auto' : 'w-full justify-start px-4'}`}
-              onClick={() => handleTabChange('vault')}
-              title="Keyword Scraper"
-            >
-              <span className="flex items-center justify-center shrink-0">
-                <Search01Icon size={20} />
-              </span>
-              {isExpanded && <span className="ml-3 truncate font-medium">Keyword Scraper</span>}
-            </Button>
+                <Button 
+                  variant={activeTab === 'gsc' ? 'active-nav' : 'ghost'} 
+                  className={`transition-all duration-300 ease-in-out overflow-hidden flex items-center ${!isExpanded ? 'w-12 h-12 p-0 justify-center rounded-xl mx-auto' : 'w-full justify-start px-4'}`}
+                  onClick={() => handleTabChange('gsc')}
+                  title="Search Console"
+                >
+                  <span className="flex items-center justify-center shrink-0">
+                    <AnalyticsUpIcon size={20} />
+                  </span>
+                  {isExpanded && <span className="ml-3 truncate font-medium">Search Console</span>}
+                </Button>
+              </div>
+            </div>
 
-            <Button 
-              variant={activeTab === 'competitor' ? 'active-nav' : 'ghost'} 
-              className={`transition-all duration-300 ease-in-out overflow-hidden flex items-center ${!isExpanded ? 'w-12 h-12 p-0 justify-center rounded-xl mx-auto' : 'w-full justify-start px-4'}`}
-              onClick={() => handleTabChange('competitor')}
-              title="Competitor Analysis"
-            >
-              <span className="flex items-center justify-center shrink-0">
-                <File01Icon size={20} />
-              </span>
-              {isExpanded && <span className="ml-3 truncate font-medium">Competitor Analysis</span>}
-            </Button>
+            {/* Category: Growth */}
+            <div className="mb-2 mt-4">
+              <div className={`transition-all duration-300 overflow-hidden ${isExpanded ? 'max-h-10 opacity-100' : 'max-h-0 opacity-0'}`}>
+                <div className="px-4 text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-3">Growth & Discovery</div>
+              </div>
+              {!isExpanded && <div className="h-px bg-white/[0.04] w-8 mx-auto mb-3" />}
+              
+              <div className="flex flex-col gap-2">
+                <Button 
+                  variant={activeTab === 'vault' ? 'active-nav' : 'ghost'} 
+                  className={`transition-all duration-300 ease-in-out overflow-hidden flex items-center ${!isExpanded ? 'w-12 h-12 p-0 justify-center rounded-xl mx-auto' : 'w-full justify-start px-4'}`}
+                  onClick={() => handleTabChange('vault')}
+                  title="Keyword Scraper"
+                >
+                  <span className="flex items-center justify-center shrink-0">
+                    <Search01Icon size={20} />
+                  </span>
+                  {isExpanded && <span className="ml-3 truncate font-medium">Keyword Scraper</span>}
+                </Button>
 
-
+                <Button 
+                  variant={activeTab === 'competitor' ? 'active-nav' : 'ghost'} 
+                  className={`transition-all duration-300 ease-in-out overflow-hidden flex items-center ${!isExpanded ? 'w-12 h-12 p-0 justify-center rounded-xl mx-auto' : 'w-full justify-start px-4'}`}
+                  onClick={() => handleTabChange('competitor')}
+                  title="Competitor Analysis"
+                >
+                  <span className="flex items-center justify-center shrink-0">
+                    <File01Icon size={20} />
+                  </span>
+                  {isExpanded && <span className="ml-3 truncate font-medium">Competitor Analysis</span>}
+                </Button>
+              </div>
+            </div>
           </nav>
           
           <div className={`p-4 border-t border-(--border-strong) flex ${isExpanded ? 'justify-between' : 'flex-col gap-4 items-center'} shrink-0`}>
@@ -316,7 +346,12 @@ function App() {
               {activeTab === 'gsc' && <GscDashboard />}
               {activeTab === 'vault' && <KeywordVault />}
               {activeTab === 'competitor' && <CompetitorAnalysis />}
-              {activeTab === 'audit' && <SiteAudit activeProject={activeProject} />}
+              {(activeTab === 'audit' || activeTab === 'audit_content') && (
+                <SiteAudit 
+                  activeProject={activeProject} 
+                  requestedTab={activeTab === 'audit_content' ? 'content' : 'overview'} 
+                />
+              )}
             </>
           )}
         </main>

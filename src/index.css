@@ -48,6 +48,16 @@ textarea:focus,
   outline: none !important;
 }
 
+/* Remove arrows from number inputs */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 10px;

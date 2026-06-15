@@ -26,77 +26,113 @@ export function GuidancePanel({ isOpen, onClose, issueDescription, page }: Guida
       return {
         why: "The title tag is the most important on-page SEO element. It tells search engines and users exactly what the page is about.",
         current: "No title tag found on this page.",
-        fix: "Add a <title> tag inside the <head> section of your HTML, or use your CMS to set an SEO Title. Keep it between 30-60 characters."
+        fix: "Add a <title> tag inside the <head> section of your HTML, or use your CMS to set an SEO Title. Keep it between 30-60 characters.",
+        exactData: <div className="text-zinc-500 italic">&lt;head&gt;...&lt;/head&gt; (No title tag found)</div>
       };
     }
     if (desc.includes("Title too short")) {
       return {
         why: "Short titles miss the opportunity to include valuable keywords and might not provide enough context for users.",
         current: `Current title: "${page.title}" (${page.title?.length} chars)`,
-        fix: "Expand your title to 30-60 characters. Include your primary keyword and make it descriptive."
+        fix: "Expand your title to 30-60 characters. Include your primary keyword and make it descriptive.",
+        exactData: <div className="text-red-400 font-mono text-xs p-2 bg-red-500/10 rounded">&lt;title&gt;{page.title}&lt;/title&gt;</div>
       };
     }
     if (desc.includes("Title too long")) {
       return {
         why: "Search engines typically truncate titles longer than 60 characters, which can make your listing look broken and lower CTR.",
         current: `Current title: "${page.title}" (${page.title?.length} chars)`,
-        fix: "Trim your title to under 60 characters while keeping the most important keywords at the beginning."
+        fix: "Trim your title to under 60 characters while keeping the most important keywords at the beginning.",
+        exactData: <div className="text-red-400 font-mono text-xs p-2 bg-red-500/10 rounded">&lt;title&gt;{page.title}&lt;/title&gt;</div>
       };
     }
     if (desc.includes("Missing Meta Description")) {
       return {
         why: "Meta descriptions act as a pitch for your page in search results. Without one, search engines will guess and grab random text.",
         current: "No meta description found.",
-        fix: "Add a <meta name=\"description\" content=\"...\"> tag. Keep it between 120-160 characters and write a compelling summary."
+        fix: "Add a <meta name=\"description\" content=\"...\"> tag. Keep it between 120-160 characters and write a compelling summary.",
+        exactData: <div className="text-zinc-500 italic">&lt;head&gt;...&lt;/head&gt; (No meta description tag found)</div>
       };
     }
     if (desc.includes("Meta Description too long")) {
       return {
         why: "Descriptions over 160 characters will be cut off in search results with an ellipsis (...).",
         current: `Current length: ${page.meta_description?.length} chars`,
-        fix: "Edit your description to be concise and under 160 characters while retaining a clear call-to-action."
+        fix: "Edit your description to be concise and under 160 characters while retaining a clear call-to-action.",
+        exactData: <div className="text-red-400 font-mono text-xs p-2 bg-red-500/10 rounded">&lt;meta name="description" content="{page.meta_description}"&gt;</div>
       };
     }
     if (desc.includes("Missing H1")) {
       return {
         why: "The H1 tag is the main heading of a page. It provides critical structural context to search engines.",
         current: "No H1 tag found.",
-        fix: "Ensure exactly one <h1> tag exists on the page, and that it clearly describes the page's main topic."
+        fix: "Ensure exactly one <h1> tag exists on the page, and that it clearly describes the page's main topic.",
+        exactData: <div className="text-zinc-500 italic">&lt;body&gt;...&lt;/body&gt; (No &lt;h1&gt; tag found)</div>
       };
     }
     if (desc.includes("Broken link")) {
       return {
         why: "Broken links create terrible user experiences and signal to search engines that your site is unmaintained.",
         current: `HTTP Status Code: ${page.status_code}`,
-        fix: "Check why the page is returning an error. If the page was moved, set up a 301 redirect. Otherwise, restore the content."
+        fix: "Check why the page is returning an error. If the page was moved, set up a 301 redirect. Otherwise, restore the content.",
+        exactData: <div className="text-red-400 font-mono text-xs p-2 bg-red-500/10 rounded">HTTP/1.1 {page.status_code}</div>
       };
     }
     if (desc.includes("Low word count")) {
       return {
         why: "Thin content (under 300 words) often struggles to rank because it doesn't provide enough depth or value on a topic.",
         current: `Current word count: ${page.word_count} words`,
-        fix: "Consider expanding the content to be more comprehensive, or combine it with another page if it doesn't warrant its own page."
+        fix: "Consider expanding the content to be more comprehensive, or combine it with another page if it doesn't warrant its own page.",
+        exactData: <div className="text-yellow-400 font-mono text-xs p-2 bg-yellow-500/10 rounded">Word Count: {page.word_count}</div>
       };
     }
     if (desc.includes("Duplicate Title Tag")) {
       return {
         why: "Duplicate titles confuse search engines about which page to rank for a query, often leading to keyword cannibalization.",
         current: `Current title: "${page.title}"`,
-        fix: "Write a unique, descriptive title tag for every single page on your website."
+        fix: "Write a unique, descriptive title tag for every single page on your website.",
+        exactData: <div className="text-zinc-500 italic">This title tag is shared with other pages:<br/><div className="text-red-400 font-mono text-xs p-2 bg-red-500/10 rounded inline-block mt-2">&lt;title&gt;{page.title}&lt;/title&gt;</div></div>
       };
     }
     if (desc.includes("Duplicate Meta Description")) {
       return {
         why: "When multiple pages share the same meta description, search engines might ignore it or consider the pages as duplicates.",
         current: `Current description: "${page.meta_description}"`,
-        fix: "Craft a unique meta description tailored specifically to the unique content of this page."
+        fix: "Craft a unique meta description tailored specifically to the unique content of this page.",
+        exactData: <div className="text-zinc-500 italic">This description is shared with other pages:<br/><div className="text-red-400 font-mono text-xs p-2 bg-red-500/10 rounded inline-block mt-2">&lt;meta name="description" content="{page.meta_description}"&gt;</div></div>
+      };
+    }
+    if (desc.includes("Multiple Title Tags In Page")) {
+      let titles: string[] = [];
+      try {
+        const actualIssue = page.issues.find(i => i.description.startsWith("Multiple Title Tags In Page|"));
+        if (actualIssue) {
+          titles = JSON.parse(actualIssue.description.split('|')[1] || "[]");
+        }
+      } catch (e) {
+        // ignore
+      }
+      return {
+        why: "Having multiple title tags on a single page is invalid HTML and confuses search engines as to which title should be used for ranking.",
+        current: "Found more than one <title> tag.",
+        fix: "Remove the duplicate <title> tags. There should only be exactly one <title> element in the <head> section.",
+        exactData: (
+          <div className="flex flex-col gap-2">
+            {titles.length > 0 ? titles.map((t, i) => (
+              <div key={i} className="text-red-400 font-mono text-xs p-2 bg-red-500/10 rounded break-all">
+                &lt;title&gt;{t}&lt;/title&gt;
+              </div>
+            )) : <div className="text-zinc-500 italic">No exact data available</div>}
+          </div>
+        )
       };
     }
     if (desc.includes("Orphan Page")) {
       return {
         why: "Orphan pages have no internal links pointing to them. Search engine bots have trouble finding them, and they pass no internal link equity.",
         current: "No internal links found pointing to this page.",
-        fix: "Find relevant pages on your site and add internal links pointing to this orphan page."
+        fix: "Find relevant pages on your site and add internal links pointing to this orphan page.",
+        exactData: <div className="text-yellow-400 font-mono text-xs p-2 bg-yellow-500/10 rounded">In-Links: 0</div>
       };
     }
     if (desc.includes("Broken External Links")) {
@@ -187,21 +223,24 @@ export function GuidancePanel({ isOpen, onClose, issueDescription, page }: Guida
       return {
         why: "Alt text is crucial for accessibility (screen readers) and helps search engines understand the content of the image, improving image search rankings.",
         current: "Found images without alt text.",
-        fix: "Add descriptive alt=\"...\" attributes to all <img> tags."
+        fix: "Add descriptive alt=\"...\" attributes to all <img> tags.",
+        exactData: <div className="text-red-400 font-mono text-xs p-2 bg-red-500/10 rounded">&lt;img src="..." alt=""&gt;</div>
       };
     }
     if (desc.includes("Multiple H1")) {
       return {
         why: "Having multiple H1 tags can confuse search engines about the primary topic of the page.",
         current: "More than one <h1> tag found.",
-        fix: "Ensure there is only one <h1> tag that describes the main topic, and use H2-H6 for subheadings."
+        fix: "Ensure there is only one <h1> tag that describes the main topic, and use H2-H6 for subheadings.",
+        exactData: <div className="text-red-400 font-mono text-xs p-2 bg-red-500/10 rounded">&lt;h1&gt;{page.h1 || '...'}&lt;/h1&gt;<br/>&lt;h1&gt;...&lt;/h1&gt;</div>
       };
     }
     if (desc.includes("Heading Hierarchy Broken")) {
       return {
         why: "Skipping heading levels (e.g., jumping from H2 to H4) breaks the logical structure of the page, making it harder for search engines and screen readers to understand.",
         current: "Heading levels are skipped.",
-        fix: "Structure your headings sequentially (H1 > H2 > H3) without skipping levels."
+        fix: "Structure your headings sequentially (H1 > H2 > H3) without skipping levels.",
+        exactData: <div className="text-red-400 font-mono text-xs p-2 bg-red-500/10 rounded">E.g., &lt;h2&gt;...&lt;/h2&gt;<br/>&lt;h4&gt;...&lt;/h4&gt;</div>
       };
     }
     if (desc.includes("Content-to-HTML Ratio")) {
@@ -232,10 +271,19 @@ export function GuidancePanel({ isOpen, onClose, issueDescription, page }: Guida
         fix: "Use the Google Rich Results Test tool to validate your JSON-LD syntax and add all required properties."
       };
     }
+    if (desc.includes("Slow Load Time")) {
+      return {
+        why: "Slow pages frustrate users and are penalized by search engines. Speed is a confirmed ranking factor.",
+        current: `Load time: ${page.load_time_ms}ms`,
+        fix: "Optimize images, leverage browser caching, minify CSS/JS, and consider upgrading your hosting environment.",
+        exactData: <div className="text-red-400 font-mono text-xs p-2 bg-red-500/10 rounded">Load Time: {page.load_time_ms}ms</div>
+      };
+    }
     return {
       why: "This issue impacts your search engine visibility or user experience.",
       current: "See page details.",
-      fix: "Review standard SEO best practices for this element."
+      fix: "Review standard SEO best practices for this element.",
+      exactData: null
     };
   };
 
@@ -263,6 +311,15 @@ export function GuidancePanel({ isOpen, onClose, issueDescription, page }: Guida
               {page.url} <ArrowRight01Icon size={14} />
             </a>
           </div>
+
+          {guidance.exactData && (
+            <div className="p-4 bg-[var(--bg-base)] border border-red-500/20 rounded-2xl">
+              <div className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-2">Exact Data from Website</div>
+              <div className="mt-2 text-white/90">
+                {guidance.exactData}
+              </div>
+            </div>
+          )}
 
           <div className="p-4 bg-[var(--bg-base)] border border-[var(--border-subtle)] rounded-2xl">
             <div className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-2">Current State</div>

@@ -90,8 +90,22 @@ pub fn analyze_page(
 
     // --- Title ---
     let title_selector = Selector::parse("title").unwrap();
-    let title = document.select(&title_selector).next()
-        .map(|el| el.text().collect::<Vec<_>>().join(" ").trim().to_string());
+    let title_elements: Vec<_> = document.select(&title_selector).collect();
+    let mut all_titles = Vec::new();
+    for el in &title_elements {
+        let text = el.text().collect::<Vec<_>>().join(" ").trim().to_string();
+        all_titles.push(text);
+    }
+    
+    if all_titles.len() > 1 {
+        let titles_json = serde_json::to_string(&all_titles).unwrap_or_else(|_| "[]".to_string());
+        issues.push(AuditIssue { 
+            category: "Error".to_string(), 
+            description: format!("Multiple Title Tags In Page|{}", titles_json) 
+        });
+    }
+
+    let title = all_titles.first().cloned();
     if let Some(t) = &title {
         if t.is_empty() {
             issues.push(AuditIssue { category: "Error".to_string(), description: "Missing Title".to_string() });

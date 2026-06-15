@@ -9,12 +9,13 @@ import {
   LinkSquare02Icon, ArrowLeft01Icon, 
   Calendar01Icon, PlayIcon, Cancel01Icon, Search01Icon,
   Delete01Icon, ArrowUpRight01Icon, ArrowDownRight01Icon,
-  EyeIcon, File01Icon, Settings01Icon,
+  File01Icon, Settings01Icon,
   TextFontIcon, Tag01Icon, Heading01Icon, File02Icon, Image01Icon, Link01Icon, Globe02Icon, Folder01Icon
 } from 'hugeicons-react';
 import { Project } from '../components/ProjectSelector';
 import { GuidancePanel } from '../components/GuidancePanel';
 import { Select } from '../components/Select';
+import { CrawlerViewModal, CrawlerPage } from '../components/CrawlerViewModal';
 
 interface AuditProgress {
   url: string;
@@ -83,28 +84,27 @@ interface AuditRecord {
 }
 
 const ScoreGauge = ({ score }: { score: number }) => {
-  const radius = 44;
-  const stroke = 6;
+  const radius = 36;
+  const stroke = 3;
   const normalizedRadius = radius - stroke * 2;
   const circumference = normalizedRadius * 2 * Math.PI;
   const strokeDashoffset = circumference - (score / 100) * circumference;
 
-  const colorClass = score >= 80 ? 'text-green-500' : score >= 50 ? 'text-yellow-500' : 'text-red-500';
+  const col = score >= 80 ? '#34d399' : score >= 50 ? '#fbbf24' : '#f87171';
 
   return (
-    <div className="relative flex items-center justify-center shrink-0 w-[88px] h-[88px]">
+    <div className="relative flex items-center justify-center shrink-0" style={{ width: radius * 2, height: radius * 2 }}>
       <svg height={radius * 2} width={radius * 2} className="transform -rotate-90">
         <circle
-          stroke="var(--bg-base)"
+          stroke="rgba(255,255,255,0.06)"
           fill="transparent"
           strokeWidth={stroke}
           r={normalizedRadius}
           cx={radius}
           cy={radius}
-          className={`opacity-20 ${colorClass}`}
         />
         <circle
-          stroke="currentColor"
+          stroke={col}
           fill="transparent"
           strokeWidth={stroke}
           strokeDasharray={circumference + ' ' + circumference}
@@ -113,11 +113,11 @@ const ScoreGauge = ({ score }: { score: number }) => {
           r={normalizedRadius}
           cx={radius}
           cy={radius}
-          className={`transition-all duration-1000 ease-out ${colorClass}`}
+          className="transition-all duration-1000 ease-out"
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className={`text-xl font-black tracking-tighter ${colorClass}`}>
+        <span className="text-xl font-light tracking-tight text-white">
           {score}
         </span>
       </div>
@@ -204,7 +204,7 @@ const buildUrlTree = (pages: AuditPageResult[], targetUrl: string): FlatNode[] =
   return flatTree;
 };
 
-export function SiteAudit({ activeProject }: { activeProject: Project }) {
+export function SiteAudit({ activeProject, requestedTab = 'overview' }: { activeProject: Project, requestedTab?: 'overview' | 'content' }) {
   const targetUrl = `https://${activeProject.domain}`;
   
   // Audits History State
@@ -240,10 +240,19 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedPage, setSelectedPage] = useState<AuditPageResult | null>(null);
   const [isGuidanceVisible, setIsGuidanceVisible] = useState(true);
+  
+  // Crawler View State
+  const [crawlerViewUrl, setCrawlerViewUrl] = useState<string | null>(null);
+  const [isCrawlerViewOpen, setIsCrawlerViewOpen] = useState(false);
 
   // New Tab & Filter States
-  const [activeTab, setActiveTab] = useState<'overview' | 'issues' | 'pages'>('overview');
-  const [issuesFilterSeverity, setIssuesFilterSeverity] = useState<string>('All');
+  const [activeTab, setActiveTab] = useState<'overview' | 'issues' | 'pages' | 'content'>(requestedTab);
+  
+  useEffect(() => {
+    setActiveTab(requestedTab);
+  }, [requestedTab]);
+
+  const [issuesFilterSeverity, setIssuesFilterSeverity] = useState<string>('Error');
   const [issuesFilterSearch, setIssuesFilterSearch] = useState<string>('');
   const [pagesSort, setPagesSort] = useState<'internal_rank' | 'url' | 'in_links' | 'content_depth' | 'seo_score'>('internal_rank');
   const [pagesSearch, setPagesSearch] = useState<string>('');
@@ -546,19 +555,20 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
 
       if (page.issues && page.issues.length > 0) {
         page.issues.forEach(issue => {
+          const descKey = issue.description.split('|')[0];
           if (issue.category === 'Error') {
             hasError = true;
-            if (!eGroups[issue.description]) eGroups[issue.description] = [];
-            eGroups[issue.description].push(page);
+            if (!eGroups[descKey]) eGroups[descKey] = [];
+            eGroups[descKey].push(page);
           } else if (issue.category === 'Warning') {
-            if (!wGroups[issue.description]) wGroups[issue.description] = [];
-            wGroups[issue.description].push(page);
+            if (!wGroups[descKey]) wGroups[descKey] = [];
+            wGroups[descKey].push(page);
           } else if (issue.category === 'Notice' || issue.category === 'Info') {
-            if (!nGroups[issue.description]) nGroups[issue.description] = [];
-            nGroups[issue.description].push(page);
+            if (!nGroups[descKey]) nGroups[descKey] = [];
+            nGroups[descKey].push(page);
           } else {
-            if (!wGroups[issue.description]) wGroups[issue.description] = [];
-            wGroups[issue.description].push(page);
+            if (!wGroups[descKey]) wGroups[descKey] = [];
+            wGroups[descKey].push(page);
           }
         });
       }
@@ -732,7 +742,9 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
         <div className="flex items-center justify-between p-6 pb-2 shrink-0 z-10">
           <div className="flex items-center gap-6">
             <div className="flex flex-col">
-              <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-0.5">Site Audit</span>
+              <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-0.5">
+                {activeTab === 'content' ? 'Content Quality' : 'Site Audit'}
+              </span>
               <span className="font-semibold text-[var(--accent-primary)] text-lg">{activeProject.domain}</span>
             </div>
             
@@ -829,8 +841,17 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
           {!hasStarted && (
             <div className="flex flex-col items-center justify-center text-center animate-in fade-in duration-500 relative w-full max-w-3xl mx-auto">
               <h1 className="text-4xl md:text-5xl font-medium tracking-tight text-white flex items-center justify-center gap-4 mb-4">
-                <Globe02Icon size={48} className="text-[var(--accent-primary)]" />
-                Site Audit
+                {activeTab === 'content' ? (
+                  <>
+                    <TextFontIcon size={48} className="text-[var(--accent-primary)]" />
+                    Content Quality
+                  </>
+                ) : (
+                  <>
+                    <Globe02Icon size={48} className="text-[var(--accent-primary)]" />
+                    Site Audit
+                  </>
+                )}
               </h1>
               <p className="text-zinc-500 text-lg mb-12">
                 Your workspace is ready. Run your first deep crawl to discover exactly how to make <span className="text-zinc-300 font-medium">{activeProject.domain}</span> perform flawlessly.
@@ -900,7 +921,7 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
           {results.length > 0 && (
             <>
               {/* Tab Navigation */}
-              {!selectedCategory && (
+              {!selectedCategory && activeTab !== 'content' && (
                 <div className="flex items-center gap-8 border-b border-[var(--border-subtle)] mb-8">
                   <button 
                     onClick={() => setActiveTab('overview')}
@@ -1035,19 +1056,17 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
                       return sDiff !== 0 ? sDiff : b.count - a.count;
                     }).slice(0, 5);
 
-                    // Large score gauge for the hero card
                     const HeroGauge = ({ score }: { score: number }) => {
-                      const r = 64;
-                      const sw = 8;
+                      const r = 88;
+                      const sw = 5;
                       const nr = r - sw * 2;
                       const c = nr * 2 * Math.PI;
                       const off = c - (score / 100) * c;
-                      const col = score >= 80 ? '#22c55e' : score >= 50 ? '#eab308' : '#ef4444';
+                      const col = score >= 80 ? '#34d399' : score >= 50 ? '#fbbf24' : '#f87171';
                       return (
                         <div className="relative flex items-center justify-center shrink-0" style={{ width: r * 2, height: r * 2 }}>
-                          <div className="absolute inset-0 rounded-full opacity-20 blur-xl transition-all duration-700" style={{ background: col }} />
                           <svg height={r * 2} width={r * 2} className="transform -rotate-90 relative z-10">
-                            <circle stroke={col} fill="transparent" strokeWidth={sw} r={nr} cx={r} cy={r} opacity={0.12} />
+                            <circle stroke="rgba(255,255,255,0.05)" fill="transparent" strokeWidth={sw} r={nr} cx={r} cy={r} />
                             <circle
                               stroke={col}
                               fill="transparent"
@@ -1061,8 +1080,7 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
                             />
                           </svg>
                           <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
-                            <span className="text-4xl font-black tracking-tighter" style={{ color: col }}>{score}</span>
-                            <span className="text-[10px] text-zinc-500 font-semibold uppercase tracking-widest mt-0.5">/ 100</span>
+                            <span className="text-6xl font-light tracking-tight text-white">{score}</span>
                           </div>
                         </div>
                       );
@@ -1075,93 +1093,68 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
                       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" style={{ animationDelay: '0ms' }}>
 
                         {/* Hero Health Score — 2 col span */}
-                        <div className="lg:col-span-2 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl p-8 shadow-lg flex flex-col hover:border-[var(--border-strong)] transition-all duration-300 group overflow-hidden relative">
-                          <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full blur-[80px] opacity-[0.07] transition-opacity duration-500 group-hover:opacity-[0.12]" style={{ background: mainStats.healthScore >= 80 ? '#22c55e' : mainStats.healthScore >= 50 ? '#eab308' : '#ef4444' }} />
-                          <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full blur-[60px] opacity-[0.04]" style={{ background: 'var(--accent-primary)' }} />
-
-                          <div 
-                            onClick={() => { setActiveTab('issues'); setIssuesFilterSeverity('All'); }}
-                            className="flex items-start justify-between relative z-10 cursor-pointer"
-                          >
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2.5 mb-1">
-                                <div className="w-8 h-8 rounded-lg bg-[var(--accent-primary)]/10 flex items-center justify-center">
-                                  <CheckmarkCircle01Icon size={18} className="text-[var(--accent-primary)]" />
-                                </div>
-                                <h3 className="text-white font-bold text-lg tracking-wide">Site Health</h3>
-                                {renderDiffBadge(mainStats.healthScore, compareStats.healthScore)}
-                              </div>
-                              <p className="text-sm text-zinc-400 mt-3 leading-relaxed max-w-md">
-                                {mainStats.healthScore >= 80
-                                  ? `${mainStats.healthScore}% of your pages are error-free — excellent standing.`
-                                  : mainStats.healthScore >= 50
-                                  ? `${mainStats.healthScore}% of pages are clean. There's room to improve.`
-                                  : `Only ${mainStats.healthScore}% of pages are error-free — action needed.`
-                                }
-                              </p>
-
-                            </div>
-
-                            <div className="ml-6 shrink-0">
-                              <HeroGauge score={mainStats.healthScore} />
-                            </div>
-                          </div>
-
-                          {/* Elegant Summary Stats */}
-                          <div className="grid grid-cols-2 mt-auto pt-8 border-t border-[var(--border-subtle)] relative z-10">
+                        <div className="lg:col-span-2 bg-[#121214] border border-white/[0.04] rounded-[2rem] p-10 shadow-sm flex flex-col transition-all duration-300 relative justify-center">
+                          <div className="flex flex-col md:flex-row items-center gap-12 md:gap-8 lg:gap-12 h-full">
                             
-                            <div 
-                              onClick={() => setActiveTab('pages')}
-                              className="flex items-center gap-4 group cursor-pointer py-6 pr-8 border-r border-b border-[var(--border-subtle)] hover:bg-white/5 transition-colors"
-                            >
-                              <div className="w-12 h-12 rounded-2xl bg-[var(--bg-base)] border border-[var(--border-subtle)] flex items-center justify-center shrink-0 group-hover:border-zinc-600 transition-colors shadow-sm">
-                                <File01Icon size={20} className="text-zinc-400" />
-                              </div>
-                              <div>
-                                <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-0.5 group-hover:text-zinc-300 transition-colors">Crawled Pages</div>
-                                <div className="text-2xl font-bold text-white tracking-tight">{results.length}</div>
-                              </div>
-                            </div>
-
+                            {/* Left: Big Centered Gauge & Title */}
                             <div 
                               onClick={() => { setActiveTab('issues'); setIssuesFilterSeverity('Error'); }}
-                              className="flex items-center gap-4 group cursor-pointer py-6 pl-8 border-b border-[var(--border-subtle)] hover:bg-red-500/5 transition-colors"
+                              className="flex-1 flex flex-col items-center justify-center cursor-pointer group"
                             >
-                              <div className="w-12 h-12 rounded-2xl bg-red-500/5 border border-red-500/10 flex items-center justify-center shrink-0 group-hover:border-red-500/30 transition-colors shadow-sm">
-                                <Alert01Icon size={20} className="text-red-400" />
+                              <HeroGauge score={mainStats.healthScore} />
+                              <div className="flex items-center gap-3 mt-8">
+                                <h3 className="text-white font-medium text-xl tracking-tight">Site Health</h3>
+                                {renderDiffBadge(mainStats.healthScore, compareStats.healthScore)}
                               </div>
-                              <div>
-                                <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-0.5 group-hover:text-red-300 transition-colors">Pages w/ Errors</div>
-                                <div className="text-2xl font-bold text-red-400 tracking-tight">{mainStats.pagesWithErrorsCount}</div>
-                              </div>
+                              <p className="text-[14px] text-zinc-400 mt-2 text-center max-w-[260px] font-light leading-relaxed group-hover:text-zinc-300 transition-colors">
+                                {mainStats.healthScore >= 80
+                                  ? `${mainStats.healthScore}% of your pages are error-free. Excellent standing.`
+                                  : mainStats.healthScore >= 50
+                                  ? `${mainStats.healthScore}% of pages are clean. There's room to improve.`
+                                  : `Only ${mainStats.healthScore}% of pages are error-free. Action needed.`
+                                }
+                              </p>
                             </div>
 
-                            <div 
-                              onClick={() => setActiveTab('pages')}
-                              className="flex items-center gap-4 group cursor-pointer py-6 pr-8 border-r border-[var(--border-subtle)] hover:bg-green-500/5 transition-colors"
-                            >
-                              <div className="w-12 h-12 rounded-2xl bg-green-500/5 border border-green-500/10 flex items-center justify-center shrink-0 group-hover:border-green-500/30 transition-colors shadow-sm">
-                                <CheckmarkCircle01Icon size={20} className="text-green-400" />
-                              </div>
-                              <div>
-                                <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-0.5 group-hover:text-green-300 transition-colors">Clean Pages</div>
-                                <div className="text-2xl font-bold text-green-400 tracking-tight">{mainStats.passedPages.length}</div>
-                              </div>
-                            </div>
+                            {/* Divider */}
+                            <div className="w-px self-stretch bg-white/[0.04] hidden md:block shrink-0" />
 
-                            <div 
-                              onClick={() => { setActiveTab('issues'); setIssuesFilterSeverity('All'); }}
-                              className="flex items-center gap-4 group cursor-pointer py-6 pl-8 hover:bg-yellow-500/5 transition-colors"
-                            >
-                              <div className="w-12 h-12 rounded-2xl bg-yellow-500/5 border border-yellow-500/10 flex items-center justify-center shrink-0 group-hover:border-yellow-500/30 transition-colors shadow-sm">
-                                <InformationCircleIcon size={20} className="text-yellow-400" />
+                            {/* Right: 2x2 Stats Grid */}
+                            <div className="flex-[1.2] w-full grid grid-cols-2 gap-y-12 gap-x-8">
+                              
+                              <div 
+                                onClick={() => setActiveTab('pages')}
+                                className="flex flex-col gap-1.5 cursor-pointer group"
+                              >
+                                <div className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest group-hover:text-zinc-400 transition-colors">Crawled Pages</div>
+                                <div className="text-4xl font-light text-white tracking-tight mt-1">{results.length}</div>
                               </div>
-                              <div>
-                                <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-0.5 group-hover:text-yellow-300 transition-colors">Total Issues</div>
-                                <div className="text-2xl font-bold text-yellow-400 tracking-tight">{totalIssuesCount}</div>
-                              </div>
-                            </div>
 
+                              <div 
+                                onClick={() => { setActiveTab('issues'); setIssuesFilterSeverity('Error'); }}
+                                className="flex flex-col gap-1.5 cursor-pointer group"
+                              >
+                                <div className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest group-hover:text-zinc-400 transition-colors">Pages w/ Errors</div>
+                                <div className="text-4xl font-light text-red-400 tracking-tight mt-1">{mainStats.pagesWithErrorsCount}</div>
+                              </div>
+
+                              <div 
+                                onClick={() => setActiveTab('pages')}
+                                className="flex flex-col gap-1.5 cursor-pointer group"
+                              >
+                                <div className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest group-hover:text-zinc-400 transition-colors">Clean Pages</div>
+                                <div className="text-4xl font-light text-green-400 tracking-tight mt-1">{mainStats.passedPages.length}</div>
+                              </div>
+
+                              <div 
+                                onClick={() => { setActiveTab('issues'); setIssuesFilterSeverity('Error'); }}
+                                className="flex flex-col gap-1.5 cursor-pointer group"
+                              >
+                                <div className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest group-hover:text-zinc-400 transition-colors">Total Issues</div>
+                                <div className="text-4xl font-light text-yellow-400 tracking-tight mt-1">{totalIssuesCount}</div>
+                              </div>
+
+                            </div>
                           </div>
                         </div>
 
@@ -1170,20 +1163,16 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
                           {/* SEO Score */}
                           <div 
                             onClick={() => { setActiveTab('pages'); setPagesSort('seo_score'); }}
-                            className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl p-5 shadow-sm flex-1 flex flex-col hover:border-[var(--border-strong)] transition-all duration-300 group overflow-hidden relative cursor-pointer"
+                            className="bg-[#121214] border border-white/[0.04] rounded-3xl p-6 shadow-sm flex-1 flex flex-col transition-all duration-300 group cursor-pointer hover:bg-white/[0.02]"
                           >
-                            <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl opacity-10" style={{ background: mainStats.seoScore >= 80 ? '#22c55e' : mainStats.seoScore >= 50 ? '#eab308' : '#ef4444' }} />
-                            <div className="flex items-center justify-between relative z-10">
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2 mb-0.5">
-                                  <File01Icon size={16} className="text-zinc-500 group-hover:text-white transition-colors" />
-                                  <h3 className="text-white font-bold text-sm tracking-wide">SEO Score</h3>
-                                </div>
-                                <p className="text-[11px] text-zinc-500 leading-relaxed mt-1">On-page ranking factors</p>
-                                <div className="mt-2 min-h-[20px]">
-                                  {renderDiffBadge(mainStats.seoScore, compareStats.seoScore) || <span className="text-[10px] text-zinc-600 font-medium">vs previous</span>}
-                                </div>
+                            <div className="flex items-center justify-between mb-4">
+                              <h3 className="text-white font-medium text-[15px] tracking-tight">SEO Score</h3>
+                              <div className="min-h-[20px]">
+                                {renderDiffBadge(mainStats.seoScore, compareStats.seoScore) || <span className="text-[10px] text-zinc-600 font-medium">vs previous</span>}
                               </div>
+                            </div>
+                            <div className="flex items-end justify-between mt-auto">
+                              <p className="text-[12px] text-zinc-500 leading-relaxed font-light max-w-[100px]">On-page ranking factors</p>
                               <ScoreGauge score={mainStats.seoScore} />
                             </div>
                           </div>
@@ -1191,20 +1180,16 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
                           {/* Indexability */}
                           <div 
                             onClick={() => { setActiveTab('issues'); setIssuesFilterSeverity('Error'); }}
-                            className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl p-5 shadow-sm flex-1 flex flex-col hover:border-[var(--border-strong)] transition-all duration-300 group overflow-hidden relative cursor-pointer"
+                            className="bg-[#121214] border border-white/[0.04] rounded-3xl p-6 shadow-sm flex-1 flex flex-col transition-all duration-300 group cursor-pointer hover:bg-white/[0.02]"
                           >
-                            <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl opacity-10" style={{ background: mainStats.visibilityScore >= 80 ? '#22c55e' : mainStats.visibilityScore >= 50 ? '#eab308' : '#ef4444' }} />
-                            <div className="flex items-center justify-between relative z-10">
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2 mb-0.5">
-                                  <EyeIcon size={16} className="text-zinc-500 group-hover:text-white transition-colors" />
-                                  <h3 className="text-white font-bold text-sm tracking-wide">Indexability</h3>
-                                </div>
-                                <p className="text-[11px] text-zinc-500 leading-relaxed mt-1">Crawlable & accessible URLs</p>
-                                <div className="mt-2 min-h-[20px]">
-                                  {renderDiffBadge(mainStats.visibilityScore, compareStats.visibilityScore) || <span className="text-[10px] text-zinc-600 font-medium">vs previous</span>}
-                                </div>
+                            <div className="flex items-center justify-between mb-4">
+                              <h3 className="text-white font-medium text-[15px] tracking-tight">Indexability</h3>
+                              <div className="min-h-[20px]">
+                                {renderDiffBadge(mainStats.visibilityScore, compareStats.visibilityScore) || <span className="text-[10px] text-zinc-600 font-medium">vs previous</span>}
                               </div>
+                            </div>
+                            <div className="flex items-end justify-between mt-auto">
+                              <p className="text-[12px] text-zinc-500 leading-relaxed font-light max-w-[100px]">Crawlable & accessible URLs</p>
                               <ScoreGauge score={mainStats.visibilityScore} />
                             </div>
                           </div>
@@ -1212,20 +1197,16 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
                           {/* Content Depth */}
                           <div 
                             onClick={() => { setActiveTab('pages'); setPagesSort('content_depth'); }}
-                            className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl p-5 shadow-sm flex-1 flex flex-col hover:border-[var(--border-strong)] transition-all duration-300 group overflow-hidden relative cursor-pointer"
+                            className="bg-[#121214] border border-white/[0.04] rounded-3xl p-6 shadow-sm flex-1 flex flex-col transition-all duration-300 group cursor-pointer hover:bg-white/[0.02]"
                           >
-                            <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl opacity-10" style={{ background: mainStats.contentDepthScore >= 60 ? '#8b5cf6' : mainStats.contentDepthScore >= 30 ? '#eab308' : '#ef4444' }} />
-                            <div className="flex items-center justify-between relative z-10">
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2 mb-0.5">
-                                  <TextFontIcon size={16} className="text-zinc-500 group-hover:text-white transition-colors" />
-                                  <h3 className="text-white font-bold text-sm tracking-wide">Content Depth</h3>
-                                </div>
-                                <p className="text-[11px] text-zinc-500 leading-relaxed mt-1">Content quality & richness</p>
-                                <div className="mt-2 min-h-[20px]">
-                                  {renderDiffBadge(mainStats.contentDepthScore, compareStats.contentDepthScore) || <span className="text-[10px] text-zinc-600 font-medium">vs previous</span>}
-                                </div>
+                            <div className="flex items-center justify-between mb-4">
+                              <h3 className="text-white font-medium text-[15px] tracking-tight">Content Depth</h3>
+                              <div className="min-h-[20px]">
+                                {renderDiffBadge(mainStats.contentDepthScore, compareStats.contentDepthScore) || <span className="text-[10px] text-zinc-600 font-medium">vs previous</span>}
                               </div>
+                            </div>
+                            <div className="flex items-end justify-between mt-auto">
+                              <p className="text-[12px] text-zinc-500 leading-relaxed font-light max-w-[100px]">Content quality & richness</p>
                               <ScoreGauge score={mainStats.contentDepthScore} />
                             </div>
                           </div>
@@ -1233,22 +1214,20 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
                       </div>
 
                       {/* ─── ROW 2: Quick Stats Strip ─── */}
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-px bg-[var(--border-subtle)] rounded-2xl overflow-hidden border border-[var(--border-subtle)] shadow-sm">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-px bg-white/[0.04] rounded-3xl overflow-hidden border border-white/[0.04] shadow-sm">
                         {[
-                          { label: 'Total Pages', value: results.length.toString(), icon: <File01Icon size={16} className="text-[var(--accent-primary)]" />, onClick: () => setActiveTab('pages') },
-                          { label: 'Avg Load Time', value: `${avgLoadTime}ms`, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, onClick: () => setActiveTab('pages') },
-                          { label: 'Avg Word Count', value: avgWordCount.toLocaleString(), icon: <TextFontIcon size={16} className="text-blue-400" />, onClick: () => { setActiveTab('pages'); setPagesSort('content_depth'); } },
-                          { label: 'Internal Links', value: totalInternalLinks.toLocaleString(), icon: <Link01Icon size={16} className="text-cyan-400" />, onClick: () => { setActiveTab('pages'); setPagesSort('in_links'); } },
-                          { label: 'Orphan Pages', value: orphanPages.toString(), icon: <LinkSquare02Icon size={16} className={orphanPages > 0 ? 'text-yellow-400' : 'text-green-400'} />, onClick: () => { setActiveTab('issues'); setIssuesFilterSearch('Orphan Page'); setIssuesFilterSeverity('All'); } },
+                          { label: 'Total Pages', value: results.length.toString(), icon: <File01Icon size={16} className="text-zinc-400" />, onClick: () => setActiveTab('pages') },
+                          { label: 'Avg Load Time', value: `${avgLoadTime}ms`, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-400"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, onClick: () => setActiveTab('pages') },
+                          { label: 'Avg Word Count', value: avgWordCount.toLocaleString(), icon: <TextFontIcon size={16} className="text-zinc-400" />, onClick: () => { setActiveTab('pages'); setPagesSort('content_depth'); } },
+                          { label: 'Internal Links', value: totalInternalLinks.toLocaleString(), icon: <Link01Icon size={16} className="text-zinc-400" />, onClick: () => { setActiveTab('pages'); setPagesSort('in_links'); } },
+                          { label: 'Orphan Pages', value: orphanPages.toString(), icon: <LinkSquare02Icon size={16} className={orphanPages > 0 ? 'text-yellow-500' : 'text-zinc-400'} />, onClick: () => { setActiveTab('issues'); setIssuesFilterSearch('Orphan Page'); setIssuesFilterSeverity('All'); } },
                         ].map((stat, idx) => (
-                          <div key={idx} onClick={stat.onClick} className="bg-[var(--bg-surface)] flex items-center gap-3 px-5 py-4 hover:bg-[var(--bg-surface-hover)] transition-colors cursor-pointer group">
-                            <div className="w-8 h-8 rounded-lg bg-[var(--bg-base)] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                          <div key={idx} onClick={stat.onClick} className="bg-[#121214] flex flex-col items-start gap-2 px-6 py-6 hover:bg-white/[0.02] transition-colors cursor-pointer group">
+                            <div className="flex items-center gap-2.5">
                               {stat.icon}
+                              <div className="text-[11px] text-zinc-500 font-semibold uppercase tracking-widest truncate group-hover:text-zinc-400 transition-colors">{stat.label}</div>
                             </div>
-                            <div className="min-w-0">
-                              <div className="text-base font-bold text-white leading-none">{stat.value}</div>
-                              <div className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider mt-1 truncate">{stat.label}</div>
-                            </div>
+                            <div className="text-2xl font-light text-white leading-none mt-2">{stat.value}</div>
                           </div>
                         ))}
                       </div>
@@ -1257,57 +1236,57 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
                       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                         {/* Top Issues Card — 2 col span */}
-                        <div className="lg:col-span-2 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl shadow-sm hover:border-[var(--border-strong)] transition-all duration-300 overflow-hidden">
-                          <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[var(--border-subtle)]">
+                        <div className="lg:col-span-2 bg-[#121214] border border-white/[0.04] rounded-[2rem] shadow-sm flex flex-col overflow-hidden">
+                          <div className="flex items-center justify-between px-8 pt-8 pb-5 border-b border-white/[0.04]">
                             <div className="flex items-center gap-3">
-                              <h3 className="text-white font-bold text-base tracking-wide">Top Issues</h3>
-                              <div className="text-xs font-bold text-zinc-400 bg-white/5 px-2.5 py-0.5 rounded-full border border-white/5">{totalIssuesCount} total</div>
+                              <h3 className="text-white font-medium text-lg tracking-tight">Top Issues</h3>
+                              <div className="text-[11px] font-semibold text-zinc-400 bg-white/5 px-2.5 py-1 rounded-full border border-white/[0.04] uppercase tracking-wider">{totalIssuesCount} total</div>
                             </div>
                             <button
-                              onClick={() => { setIssuesFilterSeverity('All'); setActiveTab('issues'); }}
-                              className="text-xs font-semibold text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] transition-colors flex items-center gap-1 group/link"
+                              onClick={() => { setIssuesFilterSeverity('Error'); setActiveTab('issues'); }}
+                              className="text-[13px] font-medium text-zinc-400 hover:text-white transition-colors flex items-center gap-1 group/link"
                             >
                               View all
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover/link:translate-x-0.5 transition-transform"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover/link:translate-x-0.5 transition-transform"><polyline points="9 18 15 12 9 6"></polyline></svg>
                             </button>
                           </div>
                           {top5Issues.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+                            <div className="flex flex-col items-center justify-center flex-1 py-16 px-6 text-center">
                               <CheckmarkCircle01Icon size={40} className="text-green-500/40 mb-3" />
-                              <p className="text-sm font-medium text-zinc-400">No issues detected — your site is looking healthy!</p>
+                              <p className="text-[15px] font-light text-zinc-400">No issues detected — your site is looking perfectly healthy.</p>
                             </div>
                           ) : (
-                            <div className="divide-y divide-[var(--border-subtle)]">
+                            <div className="divide-y divide-white/[0.04]">
                               {top5Issues.map((issue, i) => {
                                 const maxCount = Math.max(1, top5Issues[0]?.count || 1);
                                 const barWidth = (issue.count / maxCount) * 100;
                                 return (
                                   <div
                                     key={i}
-                                    className="flex items-center gap-4 px-6 py-3.5 hover:bg-white/[0.03] transition-all cursor-pointer group/row relative"
+                                    className="flex items-center gap-4 px-8 py-4 hover:bg-white/[0.02] transition-colors cursor-pointer group/row"
                                     onClick={() => setSelectedCategory(issue.title)}
                                   >
                                     {/* Severity dot */}
-                                    <div className={`w-2 h-2 rounded-full shrink-0 ${issue.severity === 'Error' ? 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]' : issue.severity === 'Warning' ? 'bg-yellow-500 shadow-[0_0_6px_rgba(234,179,8,0.5)]' : 'bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.5)]'}`} />
+                                    <div className={`w-2 h-2 rounded-full shrink-0 ${issue.severity === 'Error' ? 'bg-red-500' : issue.severity === 'Warning' ? 'bg-yellow-500' : 'bg-blue-500'}`} />
                                     
                                     {/* Issue icon + title */}
-                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
                                       {getIssueIcon(issue.title, issue.severity, 16)}
-                                      <span className="text-sm font-medium text-zinc-200 truncate group-hover/row:text-white transition-colors">{issue.title}</span>
+                                      <span className="text-[15px] font-light text-zinc-300 truncate group-hover/row:text-white transition-colors">{issue.title}</span>
                                     </div>
 
                                     {/* Mini bar + count */}
-                                    <div className="flex items-center gap-3 shrink-0">
-                                      <div className="w-20 h-1.5 bg-white/5 rounded-full overflow-hidden hidden sm:block">
+                                    <div className="flex items-center gap-4 shrink-0">
+                                      <div className="w-24 h-1 bg-white/5 rounded-full overflow-hidden hidden sm:block">
                                         <div
-                                          className={`h-full rounded-full transition-all duration-700 ${issue.severity === 'Error' ? 'bg-red-500/70' : issue.severity === 'Warning' ? 'bg-yellow-500/70' : 'bg-blue-500/70'}`}
+                                          className={`h-full rounded-full transition-all duration-700 ${issue.severity === 'Error' ? 'bg-red-500' : issue.severity === 'Warning' ? 'bg-yellow-500' : 'bg-blue-500'}`}
                                           style={{ width: `${barWidth}%` }}
                                         />
                                       </div>
-                                      <span className={`text-sm font-bold tabular-nums w-8 text-right ${issue.severity === 'Error' ? 'text-red-400' : issue.severity === 'Warning' ? 'text-yellow-400' : 'text-blue-400'}`}>
+                                      <span className={`text-[15px] font-medium tabular-nums w-8 text-right ${issue.severity === 'Error' ? 'text-red-400' : issue.severity === 'Warning' ? 'text-yellow-400' : 'text-blue-400'}`}>
                                         {issue.count}
                                       </span>
-                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-600 group-hover/row:text-zinc-300 group-hover/row:translate-x-0.5 transition-all">
+                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-600 group-hover/row:text-zinc-400 transition-colors">
                                         <polyline points="9 18 15 12 9 6"></polyline>
                                       </svg>
                                     </div>
@@ -1319,83 +1298,83 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
                         </div>
 
                         {/* Combined Donuts Card — 1 col */}
-                        <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl shadow-sm hover:border-[var(--border-strong)] transition-all duration-300 overflow-hidden flex flex-col">
+                        <div className="bg-[#121214] border border-white/[0.04] rounded-[2rem] shadow-sm flex flex-col overflow-hidden">
                           
                           {/* Error Distribution Mini */}
-                          <div className="p-5 flex-1 border-b border-[var(--border-subtle)]">
-                            <div className="flex items-center gap-2 mb-4">
-                              <h4 className="text-white font-bold text-sm tracking-wide">Error Distribution</h4>
-                              <div className="text-[10px] font-bold text-zinc-500 bg-white/5 px-2 py-0.5 rounded-full">{results.length}</div>
+                          <div className="p-6 flex-1 border-b border-white/[0.04] flex flex-col justify-center">
+                            <div className="flex items-center gap-3 mb-6">
+                              <h4 className="text-white font-medium text-[15px] tracking-tight">Error Distribution</h4>
+                              <div className="text-[11px] font-semibold text-zinc-500 bg-white/5 px-2.5 py-1 rounded-full border border-white/[0.04]">{results.length}</div>
                             </div>
-                            <div className="flex items-center gap-5">
-                              <div className="relative w-[72px] h-[72px] shrink-0 flex items-center justify-center group">
+                            <div className="flex items-center gap-6">
+                              <div className="relative w-[72px] h-[72px] shrink-0 flex items-center justify-center">
                                 <div
-                                  className="absolute inset-0 rounded-full transition-transform duration-500 group-hover:scale-105"
+                                  className="absolute inset-0 rounded-full"
                                   style={{
-                                    background: `conic-gradient(#22c55e 0% ${errorDistPercent}%, #ef4444 ${errorDistPercent}% 100%)`,
-                                    maskImage: 'radial-gradient(transparent 54%, black 55%)',
-                                    WebkitMaskImage: 'radial-gradient(transparent 54%, black 55%)'
+                                    background: `conic-gradient(#34d399 0% ${errorDistPercent}%, #f87171 ${errorDistPercent}% 100%)`,
+                                    maskImage: 'radial-gradient(transparent 60%, black 61%)',
+                                    WebkitMaskImage: 'radial-gradient(transparent 60%, black 61%)'
                                   }}
                                 />
-                                <span className="text-[10px] font-bold text-zinc-400">{errorDistPercent.toFixed(0)}%</span>
+                                <span className="text-[13px] font-light text-zinc-300">{errorDistPercent.toFixed(0)}%</span>
                               </div>
-                              <div className="flex-1 space-y-2">
+                              <div className="flex-1 space-y-2.5">
                                 <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                                    <span className="text-xs text-zinc-400">Clean</span>
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[#34d399]" />
+                                    <span className="text-[13px] text-zinc-400 font-light">Clean</span>
                                   </div>
-                                  <span className="text-xs font-bold text-white">{pagesWithoutErrors}</span>
+                                  <span className="text-[13px] font-medium text-white">{pagesWithoutErrors}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-red-500" />
-                                    <span className="text-xs text-zinc-400">With errors</span>
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[#f87171]" />
+                                    <span className="text-[13px] text-zinc-400 font-light">With errors</span>
                                   </div>
-                                  <span className="text-xs font-bold text-white">{pagesWithErrors}</span>
+                                  <span className="text-[13px] font-medium text-white">{pagesWithErrors}</span>
                                 </div>
                               </div>
                             </div>
                           </div>
 
                           {/* HTTP Status Codes Mini */}
-                          <div className="p-5 flex-1">
-                            <div className="flex items-center gap-2 mb-4">
-                              <h4 className="text-white font-bold text-sm tracking-wide">HTTP Status</h4>
+                          <div className="p-6 flex-1 flex flex-col justify-center bg-white/[0.01]">
+                            <div className="flex items-center gap-2 mb-6">
+                              <h4 className="text-white font-medium text-[15px] tracking-tight">HTTP Status</h4>
                             </div>
-                            <div className="flex items-center gap-5">
-                              <div className="relative w-[72px] h-[72px] shrink-0 flex items-center justify-center group">
+                            <div className="flex items-center gap-6">
+                              <div className="relative w-[72px] h-[72px] shrink-0 flex items-center justify-center">
                                 <div
-                                  className="absolute inset-0 rounded-full transition-transform duration-500 group-hover:scale-105"
+                                  className="absolute inset-0 rounded-full"
                                   style={{
-                                    background: `conic-gradient(#22c55e 0% ${successPercent}%, #ef4444 ${successPercent}% ${successPercent + clientErrorPercent}%, #eab308 ${successPercent + clientErrorPercent}% 100%)`,
-                                    maskImage: 'radial-gradient(transparent 54%, black 55%)',
-                                    WebkitMaskImage: 'radial-gradient(transparent 54%, black 55%)'
+                                    background: `conic-gradient(#34d399 0% ${successPercent}%, #f87171 ${successPercent}% ${successPercent + clientErrorPercent}%, #fbbf24 ${successPercent + clientErrorPercent}% 100%)`,
+                                    maskImage: 'radial-gradient(transparent 60%, black 61%)',
+                                    WebkitMaskImage: 'radial-gradient(transparent 60%, black 61%)'
                                   }}
                                 />
-                                <span className="text-[10px] font-bold text-zinc-400">{successPercent.toFixed(0)}%</span>
+                                <span className="text-[13px] font-light text-zinc-300">{successPercent.toFixed(0)}%</span>
                               </div>
-                              <div className="flex-1 space-y-2">
+                              <div className="flex-1 space-y-2.5">
                                 <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                                    <span className="text-xs text-zinc-400">2xx</span>
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[#34d399]" />
+                                    <span className="text-[13px] text-zinc-400 font-light">2xx</span>
                                   </div>
-                                  <span className="text-xs font-bold text-white">{successCount}</span>
+                                  <span className="text-[13px] font-medium text-white">{successCount}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-red-500" />
-                                    <span className="text-xs text-zinc-400">4xx</span>
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[#f87171]" />
+                                    <span className="text-[13px] text-zinc-400 font-light">4xx</span>
                                   </div>
-                                  <span className="text-xs font-bold text-white">{clientErrorCount}</span>
+                                  <span className="text-[13px] font-medium text-white">{clientErrorCount}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                                    <span className="text-xs text-zinc-400">3xx</span>
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[#fbbf24]" />
+                                    <span className="text-[13px] text-zinc-400 font-light">3xx</span>
                                   </div>
-                                  <span className="text-xs font-bold text-white">{redirectCount}</span>
+                                  <span className="text-[13px] font-medium text-white">{redirectCount}</span>
                                 </div>
                               </div>
                             </div>
@@ -1404,54 +1383,60 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
                       </div>
 
                       {/* ─── ROW 4: Content Depth Analysis ─── */}
-                      <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl shadow-sm hover:border-[var(--border-strong)] transition-all duration-300 overflow-hidden">
-                        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[var(--border-subtle)]">
+                      <div 
+                        className="bg-[#121214] border border-white/[0.04] rounded-[2rem] shadow-sm overflow-hidden cursor-pointer hover:border-white/10 transition-colors group"
+                        onClick={() => {
+                          setActiveTab('content');
+                          window.dispatchEvent(new CustomEvent('app-navigate-force', { detail: { tab: 'audit_content' } }));
+                        }}
+                      >
+                        <div className="flex items-center justify-between px-8 pt-8 pb-6 border-b border-white/[0.04]">
                           <div className="flex items-center gap-3">
-                            <h3 className="text-white font-bold text-base tracking-wide">Content Depth Analysis</h3>
-                            <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">quality & distribution</span>
+                            <h3 className="text-white font-medium text-lg tracking-tight">Content Depth Analysis</h3>
+                            <span className="text-[11px] text-zinc-500 font-semibold uppercase tracking-widest border border-white/[0.04] rounded-full px-2.5 py-1 bg-white/5">quality & distribution</span>
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:divide-x divide-[var(--border-subtle)]">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:divide-x divide-white/[0.04]">
                           {/* Left: Word Count Distribution */}
-                          <div className="px-6 py-6">
-                            <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-4">Word Count Distribution</h4>
-                            <div className="flex items-end gap-3 h-32">
+                          <div className="px-8 py-8">
+                            <h4 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest mb-6">Word Count Distribution</h4>
+                            <div className="flex items-end gap-4 h-32">
                               {depthCounts.map((bucket, i) => (
                                 <div key={i} className="flex-1 h-full flex flex-col items-center group/bar cursor-default">
-                                  <span className="text-xs font-bold text-white opacity-0 group-hover/bar:opacity-100 transition-opacity tabular-nums mb-1">{bucket.count}</span>
+                                  <span className="text-[11px] font-medium text-zinc-400 opacity-0 group-hover/bar:opacity-100 transition-opacity tabular-nums mb-1.5">{bucket.count}</span>
                                   <div className="w-full flex-1 relative flex justify-center items-end">
                                     <div
-                                      className="w-full max-w-[64px] rounded-t-lg transition-all duration-500 ease-out group-hover/bar:opacity-90"
+                                      className="w-full max-w-[48px] rounded-sm transition-all duration-300"
                                       style={{
                                         height: `${Math.max(4, (bucket.count / maxDepthCount) * 100)}%`,
-                                        background: `linear-gradient(to top, ${bucket.color}cc, ${bucket.color}88)`,
-                                        boxShadow: bucket.count > 0 ? `0 0 12px ${bucket.color}33` : 'none'
+                                        background: bucket.color,
+                                        opacity: bucket.count > 0 ? 0.7 : 0.2
                                       }}
                                     />
                                   </div>
-                                  <span className="text-[10px] text-zinc-500 font-medium mt-2 whitespace-nowrap">{bucket.label}</span>
+                                  <span className="text-[11px] text-zinc-500 font-light mt-3 whitespace-nowrap">{bucket.label}</span>
                                 </div>
                               ))}
                             </div>
-                            <div className="flex items-center justify-between mt-4 pt-4 border-t border-[var(--border-subtle)]">
-                              <span className="text-[11px] text-zinc-500">
+                            <div className="flex items-center justify-between mt-8 pt-5 border-t border-white/[0.04]">
+                              <span className="text-[12px] text-zinc-500 font-light">
                                 <span className="text-red-400 font-medium">{depthCounts[0].count + depthCounts[1].count}</span> thin pages (&lt;300 words)
                               </span>
-                              <span className="text-[11px] text-zinc-500">
-                                <span className="text-green-400 font-medium">{depthCounts[3].count + depthCounts[4].count}</span> deep pages (500+)
+                              <span className="text-[12px] text-zinc-500 font-light">
+                                <span className="text-[#34d399] font-medium">{depthCounts[3].count + depthCounts[4].count}</span> deep pages (500+)
                               </span>
                             </div>
                           </div>
                           
                           {/* Right: Content Quality Breakdown */}
-                          <div className="px-6 py-6">
-                            <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-4">Content Quality Breakdown</h4>
+                          <div className="px-8 py-8">
+                            <h4 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest mb-6">Content Quality Breakdown</h4>
                             {(() => {
                               const qualityBuckets = [
-                                { label: 'Excellent', min: 75, max: 101, color: '#22c55e' },
-                                { label: 'Good', min: 50, max: 75, color: '#3ecf8e' },
-                                { label: 'Fair', min: 25, max: 50, color: '#eab308' },
-                                { label: 'Poor', min: 0, max: 25, color: '#ef4444' },
+                                { label: 'Excellent', min: 75, max: 101, color: '#34d399' },
+                                { label: 'Good', min: 50, max: 75, color: '#10b981' },
+                                { label: 'Fair', min: 25, max: 50, color: '#fbbf24' },
+                                { label: 'Poor', min: 0, max: 25, color: '#f87171' },
                               ];
                               const qCounts = qualityBuckets.map(b => ({
                                 ...b,
@@ -1459,18 +1444,18 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
                               }));
                               const totalQ = results.length || 1;
                               return (
-                                <div className="space-y-3">
+                                <div className="space-y-4">
                                   {qCounts.map((q, qi) => (
                                     <div key={qi} className="group/qbar cursor-default">
-                                      <div className="flex items-center justify-between mb-1.5">
-                                        <div className="flex items-center gap-2">
-                                          <div className="w-2 h-2 rounded-full" style={{ background: q.color }} />
-                                          <span className="text-xs font-medium text-zinc-300">{q.label}</span>
-                                          <span className="text-[10px] text-zinc-500">({q.min}-{q.max === 101 ? 100 : q.max})</span>
+                                      <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2.5">
+                                          <div className="w-1.5 h-1.5 rounded-full" style={{ background: q.color }} />
+                                          <span className="text-[13px] font-light text-zinc-300">{q.label}</span>
+                                          <span className="text-[11px] text-zinc-500 font-light">({q.min}-{q.max === 101 ? 100 : q.max})</span>
                                         </div>
-                                        <span className="text-xs font-bold text-white tabular-nums">{q.count} <span className="text-zinc-500 font-normal">({Math.round((q.count / totalQ) * 100)}%)</span></span>
+                                        <span className="text-[13px] font-medium text-white tabular-nums">{q.count} <span className="text-zinc-500 font-light ml-1">({Math.round((q.count / totalQ) * 100)}%)</span></span>
                                       </div>
-                                      <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                      <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
                                         <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${(q.count / totalQ) * 100}%`, background: q.color }} />
                                       </div>
                                     </div>
@@ -1478,18 +1463,18 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
                                 </div>
                               );
                             })()}
-                            <div className="grid grid-cols-3 gap-3 mt-5 pt-4 border-t border-[var(--border-subtle)]">
+                            <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-white/[0.04]">
                               <div className="text-center">
-                                <div className="text-sm font-bold text-white">{Math.round(results.reduce((a, p) => a + (p.readability_score ?? 0), 0) / (results.length || 1))}</div>
-                                <div className="text-[10px] text-zinc-500 font-medium mt-0.5">Readability</div>
+                                <div className="text-xl font-light text-white">{Math.round(results.reduce((a, p) => a + (p.readability_score ?? 0), 0) / (results.length || 1))}</div>
+                                <div className="text-[11px] text-zinc-500 font-light mt-1.5">Readability</div>
                               </div>
                               <div className="text-center">
-                                <div className="text-sm font-bold text-white">{results.filter(p => p.has_schema).length}</div>
-                                <div className="text-[10px] text-zinc-500 font-medium mt-0.5">With Schema</div>
+                                <div className="text-xl font-light text-white">{results.filter(p => p.has_schema).length}</div>
+                                <div className="text-[11px] text-zinc-500 font-light mt-1.5">With Schema</div>
                               </div>
                               <div className="text-center">
-                                <div className="text-sm font-bold text-white">{results.filter(p => p.has_video || (p.image_count ?? 0) > 0).length}</div>
-                                <div className="text-[10px] text-zinc-500 font-medium mt-0.5">Rich Media</div>
+                                <div className="text-xl font-light text-white">{results.filter(p => p.has_video || (p.image_count ?? 0) > 0).length}</div>
+                                <div className="text-[11px] text-zinc-500 font-light mt-1.5">Rich Media</div>
                               </div>
                             </div>
                           </div>
@@ -1502,9 +1487,9 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
 
                   {/* Issues Tab */}
                   {activeTab === 'issues' && (
-                    <div className="space-y-4">
+                    <div className="space-y-5">
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2">
-                        <h2 className="text-xl font-bold text-white">All Identified Issues</h2>
+                        <h2 className="text-2xl font-light tracking-tight text-white">All Identified Issues</h2>
                         <div className="flex items-center gap-3 w-full sm:w-auto">
                           <Select 
                             value={issuesFilterSeverity}
@@ -1531,20 +1516,20 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
                       </div>
 
                       {allIssues.length === 0 ? (
-                        <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl p-12 text-center text-zinc-500 flex flex-col items-center shadow-sm">
-                          <CheckmarkCircle01Icon size={56} className="text-green-500/50 mb-4" />
-                          <h3 className="text-lg font-bold text-white mb-2">Great job!</h3>
-                          <p>No issues match your current filters.</p>
+                        <div className="bg-[#121214] border border-white/[0.04] rounded-[2rem] p-16 text-center text-zinc-500 flex flex-col items-center shadow-sm">
+                          <CheckmarkCircle01Icon size={56} className="text-green-500/50 mb-5" />
+                          <h3 className="text-xl font-light tracking-tight text-white mb-2">Great job!</h3>
+                          <p className="text-[15px] font-light text-zinc-400">No issues match your current filters.</p>
                         </div>
                       ) : (
-                        <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl overflow-hidden shadow-sm">
+                        <div className="bg-[#121214] border border-white/[0.04] rounded-[2rem] overflow-hidden shadow-sm">
                           <table className="w-full text-sm text-left">
                             <thead>
-                              <tr className="bg-[var(--bg-base)] text-zinc-400 border-b border-[var(--border-subtle)]">
-                                <th className="p-4 font-medium">Issue Description</th>
-                                <th className="p-4 font-medium w-36">Affected Pages</th>
-                                <th className="p-4 font-medium w-32">Change</th>
-                                <th className="p-4 font-medium w-28 text-right">Action</th>
+                              <tr className="bg-black/20 text-zinc-500 text-[11px] font-semibold uppercase tracking-widest border-b border-white/[0.04]">
+                                <th className="p-5 font-semibold">Issue Description</th>
+                                <th className="p-5 font-semibold w-36">Affected Pages</th>
+                                <th className="p-5 font-semibold w-32">Change</th>
+                                <th className="p-5 font-semibold w-28 text-right">Action</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1558,7 +1543,7 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
                                 return (
                                   <tr 
                                     key={i} 
-                                    className="border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:bg-white/5 transition-colors cursor-pointer group"
+                                    className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors cursor-pointer group last:border-0"
                                     onClick={() => setSelectedCategory(issue.title)}
                                   >
                                     <td className="p-4 font-medium text-white">
@@ -1599,9 +1584,9 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
 
                   {/* Pages Tab */}
                   {activeTab === 'pages' && (
-                    <div className="space-y-4">
+                    <div className="space-y-5">
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2">
-                        <h2 className="text-xl font-bold text-white">Crawled Pages Data</h2>
+                        <h2 className="text-2xl font-light tracking-tight text-white">Crawled Pages Data</h2>
                         <div className="flex items-center gap-3 w-full sm:w-auto">
                           <Select 
                             value={pagesSort}
@@ -1628,29 +1613,29 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
                         </div>
                       </div>
                       
-                      <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl overflow-hidden shadow-sm">
+                      <div className="bg-[#121214] border border-white/[0.04] rounded-[2rem] overflow-hidden shadow-sm">
                         <table className="w-full text-sm text-left">
                           <thead>
-                            <tr className="bg-[var(--bg-base)] text-zinc-400 border-b border-[var(--border-subtle)]">
-                              <th className="p-4 font-medium">URL & Title</th>
-                              <th className="p-4 font-medium w-24 text-center">Status</th>
+                            <tr className="bg-black/20 text-zinc-500 text-[11px] font-semibold uppercase tracking-widest border-b border-white/[0.04]">
+                              <th className="p-5 font-semibold">URL & Title</th>
+                              <th className="p-5 font-semibold w-24 text-center">Status</th>
                               {pagesSort === 'content_depth' && (
                                 <>
-                                  <th className="p-4 font-medium w-32 text-center">Content Depth</th>
-                                  <th className="p-4 font-medium w-28 text-right">Word Count</th>
+                                  <th className="p-5 font-semibold w-32 text-center">Content Depth</th>
+                                  <th className="p-5 font-semibold w-28 text-right">Word Count</th>
                                 </>
                               )}
                               {pagesSort === 'seo_score' && (
                                 <>
-                                  <th className="p-4 font-medium w-32 text-center">SEO Score</th>
-                                  <th className="p-4 font-medium w-24 text-center">Issues</th>
+                                  <th className="p-5 font-semibold w-32 text-center">SEO Score</th>
+                                  <th className="p-5 font-semibold w-24 text-center">Issues</th>
                                 </>
                               )}
                               {(pagesSort === 'internal_rank' || pagesSort === 'in_links' || pagesSort === 'url') && (
                                 <>
-                                  <th className="p-4 font-medium w-36 text-right">Internal Rank</th>
-                                  <th className="p-4 font-medium w-24 text-right">In-Links</th>
-                                  <th className="p-4 font-medium w-24 text-right">Out-Links</th>
+                                  <th className="p-5 font-semibold w-36 text-right">Internal Rank</th>
+                                  <th className="p-5 font-semibold w-24 text-right">In-Links</th>
+                                  <th className="p-5 font-semibold w-24 text-right">Out-Links</th>
                                 </>
                               )}
                             </tr>
@@ -1658,13 +1643,13 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
                           <tbody>
                             {sortedPages.length === 0 ? (
                                <tr>
-                                  <td colSpan={7} className="p-12 text-center text-zinc-500">
+                                  <td colSpan={7} className="p-16 text-center text-zinc-500 font-light text-[15px]">
                                     No pages match your search.
                                   </td>
                                </tr>
                             ) : pagesSort === 'url' ? (
                               buildUrlTree(sortedPages, targetUrl).map((node, i) => (
-                                <tr key={i} className="border-b border-[var(--border-subtle)] last:border-0 hover:bg-[var(--bg-surface-hover)] transition-colors">
+                                <tr key={i} className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors">
                                   <td className="p-4" style={{ paddingLeft: `${node.depth * 1.5 + 1}rem` }}>
                                     <div className="font-medium text-white break-all flex items-center gap-2">
                                       {node.isFolder && !node.page ? (
@@ -1704,7 +1689,7 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
                                 </tr>
                               ))
                             ) : sortedPages.map((p, i) => (
-                              <tr key={i} className="border-b border-[var(--border-subtle)] last:border-0 hover:bg-[var(--bg-surface-hover)] transition-colors">
+                              <tr key={i} className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors">
                                 <td className="p-4">
                                   <div className="font-medium text-white break-all flex items-center gap-2">
                                     <LinkSquare02Icon size={14} className="text-zinc-500 shrink-0" />
@@ -1776,12 +1761,111 @@ export function SiteAudit({ activeProject }: { activeProject: Project }) {
                     </div>
                   )}
 
+                  {activeTab === 'content' && (
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                          <TextFontIcon size={24} className="text-blue-400" />
+                          Content Quality
+                        </h2>
+                        <span className="text-sm text-zinc-400">{results.length} pages analyzed</span>
+                      </div>
+                      
+                      <div className="bg-[#121214] border border-white/[0.04] rounded-2xl shadow-sm overflow-hidden">
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="bg-black/20 text-zinc-500 text-[11px] font-semibold uppercase tracking-widest border-b border-white/[0.04]">
+                                <th className="p-4 pl-6 font-semibold min-w-[300px]">URL</th>
+                                <th className="p-4 font-semibold text-right">Word Count</th>
+                                <th className="p-4 font-semibold text-right">Readability</th>
+                                <th className="p-4 font-semibold text-center">Rich Media</th>
+                                <th className="p-4 font-semibold text-center">Schema</th>
+                                <th className="p-4 pr-6 font-semibold text-right">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {results.sort((a, b) => b.word_count - a.word_count).map((page, i) => (
+                                <tr key={i} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors group">
+                                  <td className="p-4 pl-6">
+                                    <div className="flex flex-col">
+                                      <span className="font-medium text-white truncate max-w-[300px]" title={page.url}>
+                                        {page.url.replace(targetUrl, '') || '/'}
+                                      </span>
+                                      <span className="text-xs text-zinc-500 truncate max-w-[300px] mt-0.5">
+                                        {page.title || 'No title'}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="p-4 text-right">
+                                    <span className={`font-mono text-[13px] ${page.word_count < 300 ? 'text-red-400' : 'text-zinc-300'}`}>
+                                      {page.word_count.toLocaleString()}
+                                    </span>
+                                  </td>
+                                  <td className="p-4 text-right">
+                                    <span className="font-mono text-[13px] text-zinc-300">
+                                      {(page.readability_score || 0).toFixed(1)}
+                                    </span>
+                                  </td>
+                                  <td className="p-4 text-center">
+                                    <div className="flex items-center justify-center gap-2">
+                                      {(page.image_count || 0) > 0 && <span title={`${page.image_count} images`}><Image01Icon size={14} className="text-zinc-500" /></span>}
+                                      {(page.has_table || page.has_list) && <span title="Structured Content"><File02Icon size={14} className="text-zinc-500" /></span>}
+                                      {(page.has_video) && <span title="Video Content"><PlayIcon size={14} className="text-zinc-500" /></span>}
+                                    </div>
+                                  </td>
+                                  <td className="p-4 text-center">
+                                    {page.has_schema ? (
+                                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-500/10 text-green-500" title={page.schema_types?.join(', ') || 'Schema Found'}>
+                                        <CheckmarkCircle01Icon size={12} />
+                                      </span>
+                                    ) : (
+                                      <span className="text-zinc-600">-</span>
+                                    )}
+                                  </td>
+                                  <td className="p-4 pr-6 text-right">
+                                    <button
+                                      onClick={() => {
+                                        setCrawlerViewUrl(page.url);
+                                        setIsCrawlerViewOpen(true);
+                                      }}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/5 hover:bg-white/10 text-xs font-medium text-zinc-300 transition-colors border border-white/5 whitespace-nowrap"
+                                    >
+                                      <Search01Icon size={14} />
+                                      View as Crawler
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </>
           )}
         </div>
       </div>
+
+      {/* Crawler View Modal */}
+      <CrawlerViewModal 
+        isOpen={isCrawlerViewOpen} 
+        onClose={() => {
+          setIsCrawlerViewOpen(false);
+          setTimeout(() => setCrawlerViewUrl(null), 300);
+        }} 
+        pages={results.map(r => ({
+          url: r.url,
+          title: r.title,
+          word_count: r.word_count,
+          has_schema: r.has_schema ?? false,
+          readability_score: r.readability_score ?? 0,
+        } as CrawlerPage))}
+        initialUrl={crawlerViewUrl}
+      />
 
       {/* Crawl Settings Modal */}
       {isSettingsModalOpen && (

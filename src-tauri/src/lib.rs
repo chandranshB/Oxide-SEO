@@ -140,7 +140,8 @@ pub fn run() {
             commands::keywords::scrape_competitor_outline,
             commands::oauth::start_oauth_server,
             commands::oauth::exchange_oauth_token,
-            commands::audit::run_site_audit
+            commands::audit::run_site_audit,
+            commands::crawler_view::fetch_page_content_view
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
