@@ -100,27 +100,36 @@ export function ProjectSelector({ activeProject, setActiveProject, isExpanded }:
     }
   };
 
-  const handleDeleteProject = async (id: number) => {
+  const handleDeleteProject = async (id: number, domain: string) => {
+    if (!confirm(`Delete "${domain}" and all its audit and keyword data? This can't be undone.`)) return;
     try {
       const db = await Database.load('sqlite:seo_kit.db');
-      
+
       // Cascade delete manually (in case PRAGMA foreign_keys is off)
       await db.execute(`
-        DELETE FROM audit_pages 
+        DELETE FROM audit_pages
         WHERE audit_id IN (SELECT id FROM audits WHERE project_id = $1)
       `, [id]);
-      
+
       await db.execute('DELETE FROM audits WHERE project_id = $1', [id]);
-      
+
+      await db.execute(`
+        DELETE FROM keyword_results
+        WHERE session_id IN (SELECT id FROM keyword_sessions WHERE project_id = $1)
+      `, [id]);
+
+      await db.execute('DELETE FROM keyword_sessions WHERE project_id = $1', [id]);
+
       // Now delete the project
       await db.execute('DELETE FROM projects WHERE id = $1', [id]);
-      
+
       if (activeProject?.id === id) {
         setActiveProject(null);
       }
       await loadProjects();
     } catch (e) {
       console.error(e);
+      showError('Failed to delete project');
     }
   };
 
@@ -349,7 +358,7 @@ export function ProjectSelector({ activeProject, setActiveProject, isExpanded }:
           <button 
             className="flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors text-left"
             onClick={() => {
-              handleDeleteProject(contextMenu.project.id);
+              handleDeleteProject(contextMenu.project.id, contextMenu.project.domain);
               setContextMenu(null);
             }}
           >

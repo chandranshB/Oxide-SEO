@@ -176,40 +176,51 @@ pub async fn run_crawl(
                                         response_size,
                                     )
                                 })
-                                .await
-                                .unwrap();
+                                .await;
 
-                            // Transfer analysis results
-                            page_result.issues.extend(analysis.issues);
-                            page_result.title = analysis.title;
-                            page_result.meta_description = analysis.meta_description;
-                            page_result.h1 = analysis.h1;
-                            page_result.word_count = analysis.word_count;
-                            page_result.heading_count = analysis.heading_count;
-                            page_result.heading_depth = analysis.heading_depth;
-                            page_result.image_count = analysis.image_count;
-                            page_result.images_without_alt = analysis.images_without_alt;
-                            page_result.paragraph_count = analysis.paragraph_count;
-                            page_result.has_table = analysis.has_table;
-                            page_result.has_list = analysis.has_list;
-                            page_result.has_video = analysis.has_video;
-                            page_result.readability_score = analysis.readability_score;
-                            page_result.avg_sentence_length = analysis.avg_sentence_length;
-                            page_result.content_to_html_ratio = analysis.content_to_html_ratio;
-                            page_result.has_schema = analysis.has_schema;
-                            page_result.schema_types = analysis.schema_types;
-                            page_result.meta_robots = analysis.meta_robots;
-                            page_result.canonical_url = analysis.canonical_url;
-                            page_result.og_image = analysis.og_image;
-                            page_result.internal_link_count = analysis.internal_links.len();
-                            page_result.external_link_count = analysis.external_links.len();
+                            match analysis {
+                                Ok(analysis) => {
+                                    // Transfer analysis results
+                                    page_result.issues.extend(analysis.issues);
+                                    page_result.title = analysis.title;
+                                    page_result.meta_description = analysis.meta_description;
+                                    page_result.h1 = analysis.h1;
+                                    page_result.word_count = analysis.word_count;
+                                    page_result.heading_count = analysis.heading_count;
+                                    page_result.heading_depth = analysis.heading_depth;
+                                    page_result.image_count = analysis.image_count;
+                                    page_result.images_without_alt = analysis.images_without_alt;
+                                    page_result.paragraph_count = analysis.paragraph_count;
+                                    page_result.has_table = analysis.has_table;
+                                    page_result.has_list = analysis.has_list;
+                                    page_result.has_video = analysis.has_video;
+                                    page_result.readability_score = analysis.readability_score;
+                                    page_result.avg_sentence_length = analysis.avg_sentence_length;
+                                    page_result.content_to_html_ratio = analysis.content_to_html_ratio;
+                                    page_result.has_schema = analysis.has_schema;
+                                    page_result.schema_types = analysis.schema_types;
+                                    page_result.meta_robots = analysis.meta_robots;
+                                    page_result.canonical_url = analysis.canonical_url;
+                                    page_result.og_image = analysis.og_image;
+                                    page_result.internal_link_count = analysis.internal_links.len();
+                                    page_result.external_link_count = analysis.external_links.len();
 
-                            new_links = analysis.internal_links;
-                            external_links = analysis.external_links;
+                                    new_links = analysis.internal_links;
+                                    external_links = analysis.external_links;
 
-                            // Compute content depth score
-                            page_result.content_depth_score =
-                                crate::analyzer::content_depth::compute_score(&page_result);
+                                    // Compute content depth score
+                                    page_result.content_depth_score =
+                                        crate::analyzer::content_depth::compute_score(&page_result);
+                                }
+                                Err(_) => {
+                                    // The parser task panicked on malformed HTML — report the page
+                                    // as errored instead of silently dropping it from the results.
+                                    page_result.issues.push(AuditIssue {
+                                        category: "Error".to_string(),
+                                        description: "Failed to parse page HTML".to_string(),
+                                    });
+                                }
+                            }
                         } else {
                             page_result.issues.push(AuditIssue {
                                 category: "Error".to_string(),

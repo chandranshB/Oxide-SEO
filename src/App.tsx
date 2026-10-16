@@ -147,6 +147,8 @@ function App() {
           await db.execute('DELETE FROM audit_pages');
           await db.execute('DELETE FROM audits');
           await db.execute('DELETE FROM gsc_metrics');
+          await db.execute('DELETE FROM keyword_results');
+          await db.execute('DELETE FROM keyword_sessions');
           await db.execute('DELETE FROM projects');
         } catch (err) {
           console.error("Failed to delete records", err);

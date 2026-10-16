@@ -100,34 +100,44 @@ export async function fetchAndSyncGscData(siteUrl: string): Promise<void> {
   
   // Connect to DB and clear existing data
   const db = await Database.load('sqlite:seo_kit.db');
-  await db.execute('DELETE FROM gsc_metrics');
 
-  // Insert new rows in batches of 500 to avoid SQLite limits and IPC bottlenecks
-  const BATCH_SIZE = 500;
-  for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-    const batch = rows.slice(i, i + BATCH_SIZE);
-    
-    let placeholders = [];
-    let values = [];
-    let paramIndex = 1;
-    
-    for (const row of batch) {
-      placeholders.push(`($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`);
-      values.push(
-        row.keys[0], 
-        row.keys[1], 
-        row.clicks, 
-        row.impressions, 
-        row.ctr * 100, // Convert to percentage
-        row.position
-      );
-    }
+  // Wrapped in a transaction so a failure mid-batch can't leave the table
+  // half-cleared with only some of the new rows inserted.
+  await db.execute('BEGIN');
+  try {
+    await db.execute('DELETE FROM gsc_metrics');
 
-    if (placeholders.length > 0) {
-      await db.execute(
-        `INSERT INTO gsc_metrics (keyword, page, clicks, impressions, ctr, average_position) VALUES ${placeholders.join(',')}`,
-        values
-      );
+    // Insert new rows in batches of 500 to avoid SQLite limits and IPC bottlenecks
+    const BATCH_SIZE = 500;
+    for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+      const batch = rows.slice(i, i + BATCH_SIZE);
+
+      let placeholders = [];
+      let values = [];
+      let paramIndex = 1;
+
+      for (const row of batch) {
+        placeholders.push(`($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`);
+        values.push(
+          row.keys[0],
+          row.keys[1],
+          row.clicks,
+          row.impressions,
+          row.ctr * 100, // Convert to percentage
+          row.position
+        );
+      }
+
+      if (placeholders.length > 0) {
+        await db.execute(
+          `INSERT INTO gsc_metrics (keyword, page, clicks, impressions, ctr, average_position) VALUES ${placeholders.join(',')}`,
+          values
+        );
+      }
     }
+    await db.execute('COMMIT');
+  } catch (e) {
+    await db.execute('ROLLBACK').catch(() => {});
+    throw e;
   }
 }

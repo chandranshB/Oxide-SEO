@@ -14,6 +14,7 @@ use crate::commands::{intent, difficulty, opportunity, cluster};
 pub async fn discover_keywords(seed: String, mode: String) -> Result<KeywordDiscoveryResult, String> {
     let client = Client::builder()
         .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
+        .timeout(std::time::Duration::from_secs(15))
         .build()
         .map_err(|e| e.to_string())?;
 
@@ -160,7 +161,10 @@ async fn fetch_single(client: &Client, url: &str) -> Result<Vec<String>, String>
 
 #[tauri::command]
 pub async fn scrape_competitor_outline(url: String) -> Result<CompetitorData, String> {
-    let client = Client::new();
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .map_err(|e| e.to_string())?;
     let res = client.get(&url).send().await.map_err(|e| e.to_string())?;
     let html_text = res.text().await.map_err(|e| e.to_string())?;
 

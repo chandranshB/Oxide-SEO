@@ -159,7 +159,7 @@ export const GscConnectModal: React.FC<GscConnectModalProps> = ({ isOpen, onClos
               <p className="text-zinc-300 font-medium">Waiting for authentication...</p>
               <p className="text-xs text-zinc-500 mt-2 text-center">Please complete the sign-in process in your browser.</p>
               <Button variant="ghost" size="sm" className="mt-6" onClick={() => {
-                invoke('start_oauth_server'); // Sending a new request cancels the old one roughly, but user can just close modal
+                fetch('http://127.0.0.1:34852/?cancel=true').catch(() => {});
                 setIsExchanging(false);
                 onClose();
               }}>Cancel</Button>

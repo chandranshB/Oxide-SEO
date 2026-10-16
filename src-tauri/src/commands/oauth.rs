@@ -1,14 +1,33 @@
 use reqwest::Client;
 use std::io::{Read, Write};
 use std::net::TcpListener;
+use std::time::{Duration, Instant};
 
 #[tauri::command]
 pub async fn start_oauth_server() -> Result<String, String> {
     tokio::task::spawn_blocking(|| {
         let listener = TcpListener::bind("127.0.0.1:34852").map_err(|e| e.to_string())?;
-        
-        for stream in listener.incoming() {
-            if let Ok(mut stream) = stream {
+        // Non-blocking accept with a deadline so an abandoned auth flow (browser tab
+        // closed without hitting cancel) can't leak this thread or hold the port forever.
+        listener.set_nonblocking(true).map_err(|e| e.to_string())?;
+        let deadline = Instant::now() + Duration::from_secs(5 * 60);
+
+        loop {
+            if Instant::now() >= deadline {
+                return Err("Timed out waiting for authentication".to_string());
+            }
+
+            let mut stream = match listener.accept() {
+                Ok((stream, _)) => stream,
+                Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                    std::thread::sleep(Duration::from_millis(200));
+                    continue;
+                }
+                Err(_) => continue,
+            };
+            let _ = stream.set_read_timeout(Some(Duration::from_secs(5)));
+
+            {
                 let mut buffer = [0; 2048];
                 if let Ok(size) = stream.read(&mut buffer) {
                     let request = String::from_utf8_lossy(&buffer[..size]);
@@ -53,14 +72,15 @@ pub async fn start_oauth_server() -> Result<String, String> {
                 }
             }
         }
-        
-        Err("Listener closed unexpectedly".to_string())
     }).await.map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
 pub async fn exchange_oauth_token(code: String, client_id: String, client_secret: String, redirect_uri: String) -> Result<String, String> {
-    let client = Client::new();
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .map_err(|e| e.to_string())?;
     let params = [
         ("code", code),
         ("client_id", client_id),

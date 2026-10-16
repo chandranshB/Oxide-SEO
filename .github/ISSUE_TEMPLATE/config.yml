@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation & Guides
+    url: https://chandranshb.github.io/Oxide-SEO/guides/introduction/
+    about: Read the official documentation and guides before filing an issue.
+  - name: GitHub Releases
+    url: https://github.com/chandranshB/Oxide-SEO/releases
+    about: Download pre-built installers for Windows, macOS, and Linux.

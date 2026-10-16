@@ -25,6 +25,7 @@ pub struct CrawlerViewResult {
 pub async fn fetch_page_content_view(url: String) -> Result<CrawlerViewResult, String> {
     let client = Client::builder()
         .user_agent("Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)")
+        .timeout(std::time::Duration::from_secs(15))
         .build()
         .map_err(|e| e.to_string())?;
 
